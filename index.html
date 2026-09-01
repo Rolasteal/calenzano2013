@@ -110,8 +110,8 @@ tr.clickable{cursor:pointer}
 .tab.active{color:var(--b1);border-bottom-color:var(--r2);font-weight:600}
 .player-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:all .15s}
 .player-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
-.player-photo{height:260px;background:linear-gradient(135deg,var(--b2),var(--r2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:42px;font-weight:700;position:relative}
-.player-photo img{width:100%;height:100%;object-fit:contain}
+.player-photo{height:140px;background:linear-gradient(135deg,var(--b2),var(--r2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:42px;font-weight:700;position:relative}
+.player-photo img{width:100%;height:100%;object-fit:cover}
 .player-number{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.45);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
 .player-info{padding:12px}
 .player-name{font-weight:600;color:var(--b1);margin-bottom:4px}
@@ -222,7 +222,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div style="padding:10px 14px;font-size:10px;opacity:.55">v2026.08.27 - foto intere in rosa</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.01 - sincronia telefono/PC</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -367,7 +367,7 @@ const REAL_ROSTER=[{"nome": "Andrea", "cognome": "Annese", "numero": 10, "ruolo"
 function defaultRoster(){return REAL_ROSTER.map(g=>({id:uid(),nome:g.nome,cognome:g.cognome,dataNascita:'',ruolo:g.ruolo,piede:'',numero:g.numero,altezza:'',peso:'',taglia:'',scarpe:'',telefono:'',email:'',genitore1Nome:'',genitore1Telefono:'',genitore1Email:'',genitore2Nome:'',genitore2Telefono:'',indirizzo:'',certNumero:'',certScadenza:'',certTipo:'agonistico',tessNumero:'',tessScadenza:'',foto:'',noteTecniche:'',noteCaratteriali:'',pregi:'',difetti:'',stato:'attivo',dataIngresso:todayISO()}))}
 function defaultData(){return{squadra:{nome:'Calenzano',categoria:'Giovanissimi B',annata:'2013',stagione:'2026/2027',colori:'Rosso-Blu',campo:'Campo Sportivo Calenzano',indirizzo:'Via dello Sport, Calenzano (FI)',allenatore:'Roberto',vice:'',preparatorePortieri:'',dirigenteAccompagnatore:'',medicoSociale:'',inizioRitiro:'2026-08-25',orarioAllenamentiStd:'17:30',whatsappGruppo:''},giocatori:defaultRoster(),eventi:[],presenze:{},valutazioni:[],scadenze:[],comunicazioni:[],esercizi:[]}}
 let DATA;try{const raw=localStorage.getItem(STORAGE_KEY);DATA=raw?JSON.parse(raw):defaultData();if(!DATA.esercizi)DATA.esercizi=[];if(!DATA.squadra.whatsappGruppo)DATA.squadra.whatsappGruppo=''}catch(e){DATA=defaultData()}
-function saveData(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(DATA))}catch(e){toast('Errore salvataggio: spazio pieno?',true)}}
+function saveData(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(DATA));localStorage.setItem('cal_local_ts',new Date().toISOString());if(window.cloudPushSoon)cloudPushSoon()}catch(e){toast('Errore salvataggio: spazio pieno?',true)}}
 function toast(m,err){const t=document.createElement('div');t.className='toast';if(err)t.style.background='var(--r2)';t.textContent=m;document.getElementById('toast-root').appendChild(t);setTimeout(()=>t.remove(),2500)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function fmtDate(iso){if(!iso)return '-';return new Date(iso+'T00:00').toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})}
@@ -393,6 +393,82 @@ function viewRit(){const b=_cgB64ToBlob(RITIRO_DOC.b64,"application/pdf");window
 function downloadRit(){const b=_cgB64ToBlob(RITIRO_DOC.b64,"application/pdf");const url=URL.createObjectURL(b);const a=document.createElement("a");a.href=url;a.download=RITIRO_DOC.file;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},200);toast("Ritiro scaricato");}
 async function shareRitWA(){const b=_cgB64ToBlob(RITIRO_DOC.b64,"application/pdf");const file=new File([b],RITIRO_DOC.file,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"Ritiro 25-29 agosto",text:"Il programma del ritiro estivo"});return;}catch(e){}}downloadRit();toast("File scaricato: allegalo tu su WhatsApp");}
 function render_ritiro(){var v=document.getElementById("view-ritiro");if(!v)return;var kb=Math.round(RITIRO_DOC.b64.length*0.75/1024);var gg=[["Mar 25", "Pomeriggio", "Ripresa del pallone e osservazione"], ["Mer 26", "Mattina + Pomeriggio", "Qualita tecnica e possesso"], ["Gio 27", "Mattina + Pomeriggio", "Il 4-3-3 e costruzione dal basso"], ["Ven 28", "Mattina + Pomeriggio", "Linea a 4, attacco e pressing"], ["Sab 29", "Mattina", "Palle inattive e partita di prova"]];var lista=gg.map(function(x){return '<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--bord,#e6ecef)">'+'<div style="flex:0 0 70px;font-weight:800;font-size:12px;color:#e0a90a">'+x[0]+'</div>'+'<div><div style="font-weight:700;color:var(--b2)">'+x[2]+'</div><div style="font-size:11px;color:var(--muted)">'+x[1]+'</div></div></div>';}).join("");v.innerHTML='<div class="card" style="margin-bottom:16px"><div class="card-title">Ritiro 25-29 agosto 2026</div><div style="color:var(--muted);font-size:12px;margin-top:4px">Le 8 sedute del ritiro estivo: attivazione con tutta la squadra, poi lavoro a gruppi. Massima intensita.</div></div>'+'<div class="card" style="margin-bottom:16px">'+lista+'</div>'+'<div class="card" style="text-align:center;padding:24px 18px"><div style="font-size:10px;color:var(--muted);margin-bottom:12px">PDF ~'+kb+' KB - 8 sedute</div><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn" onclick="viewRit()">Apri</button><button class="btn btn-sec" onclick="downloadRit()">Scarica</button><button class="btn btn-sec" onclick="shareRitWA()">Condividi su WhatsApp</button></div></div>';}
+/* CLOUD_SYNC_v1 */
+const CLOUD={url:'https://bivyowygsmovmshkejxj.supabase.co',key:'sb_publishable_3-VMlmNs5bjU6zDwelqulA_9Dw7anPI',tab:'cal_app_state',row:'main'};
+function cloudReady(){return CLOUD.key.indexOf('__')!==0}
+function _ctok(){try{return JSON.parse(localStorage.getItem('cal_tok')||'null')}catch(e){return null}}
+function _ctokSet(t){localStorage.setItem('cal_tok',JSON.stringify(t))}
+function cloudLogout(){localStorage.removeItem('cal_tok');cloudStatus();toast('Uscito dalla sincronia')}
+async function cloudLogin(email,pw){
+ const r=await fetch(CLOUD.url+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':CLOUD.key,'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})});
+ const j=await r.json();
+ if(!r.ok)throw new Error(j.error_description||j.msg||j.message||'Accesso non riuscito');
+ _ctokSet({access:j.access_token,refresh:j.refresh_token,exp:Date.now()+((j.expires_in||3600)*1000),email:email});return true}
+async function _chead(){var t=_ctok();if(!t)return null;
+ if(Date.now()>t.exp-60000&&t.refresh){
+  const r=await fetch(CLOUD.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':CLOUD.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:t.refresh})});
+  if(!r.ok)return null;const j=await r.json();t={access:j.access_token,refresh:j.refresh_token,exp:Date.now()+((j.expires_in||3600)*1000),email:t.email};_ctokSet(t)}
+ return {'apikey':CLOUD.key,'Authorization':'Bearer '+t.access,'Content-Type':'application/json'}}
+async function _cmeta(){const h=await _chead();if(!h)return{err:'login'};
+ const r=await fetch(CLOUD.url+'/rest/v1/'+CLOUD.tab+'?id=eq.'+CLOUD.row+'&select=updated_at',{headers:h});
+ if(!r.ok)return{err:'rete'};const a=await r.json();return{ts:a.length?a[0].updated_at:null}}
+function _curView(){var v=document.querySelector('.view.active');return v?v.id.replace('view-',''):'dashboard'}
+function _redraw(){try{showView(_curView())}catch(e){}}
+async function cloudPull(){const h=await _chead();if(!h)return false;
+ const r=await fetch(CLOUD.url+'/rest/v1/'+CLOUD.tab+'?id=eq.'+CLOUD.row+'&select=doc,updated_at',{headers:h});
+ if(!r.ok)return false;const a=await r.json();if(!a.length)return false;
+ DATA=a[0].doc;localStorage.setItem(STORAGE_KEY,JSON.stringify(DATA));
+ localStorage.setItem('cal_sync',a[0].updated_at);localStorage.setItem('cal_local_ts',a[0].updated_at);
+ _redraw();cloudStatus('aggiornato ora');return true}
+async function cloudPush(){const h=await _chead();if(!h)return false;
+ const now=new Date().toISOString();h['Prefer']='resolution=merge-duplicates';
+ const r=await fetch(CLOUD.url+'/rest/v1/'+CLOUD.tab,{method:'POST',headers:h,body:JSON.stringify({id:CLOUD.row,doc:DATA,updated_at:now,device:(navigator.userAgent.indexOf('Mobi')>-1?'telefono':'pc')})});
+ if(!r.ok){cloudStatus('invio non riuscito');return false}
+ localStorage.setItem('cal_sync',now);localStorage.setItem('cal_local_ts',now);cloudStatus('salvato online');return true}
+var _cpt=null;function cloudPushSoon(){if(!cloudReady()||!_ctok())return;clearTimeout(_cpt);_cpt=setTimeout(function(){cloudPush()},3000)}
+function _vuota(){try{return (!DATA.eventi||!DATA.eventi.length)&&(!DATA.presenze||!Object.keys(DATA.presenze).length)&&!(DATA.giocatori||[]).some(function(g){return g.foto})}catch(e){return false}}
+async function cloudSync(manuale){
+ if(!cloudReady()){cloudStatus();return}
+ if(!_ctok()){cloudStatus();if(manuale)cloudLoginBox();return}
+ cloudStatus('controllo...');
+ const m=await _cmeta();
+ if(m.err){cloudStatus(m.err==='login'?'rifai l accesso':'nessuna rete');return}
+ const last=localStorage.getItem('cal_sync')||'';const loc=localStorage.getItem('cal_local_ts')||'';
+ if(!m.ts){await cloudPush();return}
+ if(!last){if(_vuota()){await cloudPull()}else{cloudScelta(m.ts)}return}
+ if(m.ts>last){await cloudPull();return}
+ if(loc>last){await cloudPush();return}
+ cloudStatus('tutto allineato')}
+function cloudStatus(msg){var el=document.getElementById('cloudBar');if(!el)return;
+ var t=_ctok();var stato=!cloudReady()?'da configurare':(t?('attiva'+(msg?' - '+msg:'')):'non collegata');
+ el.innerHTML='<span style="opacity:.75">Sincronia: '+esc(stato)+'</span> '+
+  (t?'<a href="#" onclick="cloudSync(true);return false" style="color:inherit">aggiorna</a> <a href="#" onclick="cloudLogout();return false" style="color:inherit;opacity:.6">esci</a>'
+    :'<a href="#" onclick="cloudLoginBox();return false" style="color:inherit">collega</a>')}
+function _box(inner){var d=document.createElement('div');d.id='cloudBox';
+ d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+ d.innerHTML='<div style="background:#fff;border-radius:12px;max-width:380px;width:100%;padding:20px;color:#222">'+inner+'</div>';
+ d.onclick=function(e){if(e.target===d)d.remove()};document.body.appendChild(d);return d}
+function cloudLoginBox(){_box('<div style="font-weight:700;font-size:16px;margin-bottom:4px">Collega la sincronia</div>'+
+ '<div style="font-size:12px;color:#666;margin-bottom:12px">Usa lo stesso accesso su telefono e PC: i dati restano allineati da soli.</div>'+
+ '<input id="clMail" class="form-input" type="email" placeholder="Email" autocomplete="username" style="margin-bottom:8px">'+
+ '<input id="clPw" class="form-input" type="password" placeholder="Password" autocomplete="current-password" style="margin-bottom:8px">'+
+ '<div id="clMsg" style="font-size:12px;color:#c0392b;min-height:16px;margin-bottom:8px"></div>'+
+ '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+ '<button class="btn btn-sec" onclick="document.getElementById(\'cloudBox\').remove()">Annulla</button>'+
+ '<button class="btn" onclick="cloudDoLogin()">Entra</button></div>')}
+async function cloudDoLogin(){var m=document.getElementById('clMsg');m.textContent='';
+ try{await cloudLogin(document.getElementById('clMail').value.trim(),document.getElementById('clPw').value);
+  var b=document.getElementById('cloudBox');if(b)b.remove();cloudStatus('attiva');await cloudSync(false);toast('Sincronia attiva')}
+ catch(e){var x=String(e.message||'');var it=x.indexOf('Invalid login')>-1?'Email o password non corretti':(x.indexOf('not confirmed')>-1?'Utente non confermato in Supabase (spunta Auto Confirm User)':(x.indexOf('Failed to fetch')>-1?'Nessuna connessione: riprova':x));m.textContent=it}}
+function cloudScelta(ts){var d=new Date(ts);
+ _box('<div style="font-weight:700;font-size:16px;margin-bottom:8px">Primo collegamento</div>'+
+ '<div style="font-size:13px;color:#444;margin-bottom:14px">Online ci sono gia dei dati (aggiornati il '+d.toLocaleString('it-IT')+').<br><br>Su questo dispositivo hai <b>'+(DATA.giocatori||[]).length+'</b> giocatori e <b>'+Object.keys(DATA.presenze||{}).length+'</b> allenamenti registrati.<br><br>Quali tengo?</div>'+
+ '<div style="display:flex;flex-direction:column;gap:8px">'+
+ '<button class="btn" onclick="document.getElementById(\'cloudBox\').remove();cloudPull()">Uso quelli online (scarica)</button>'+
+ '<button class="btn btn-sec" onclick="document.getElementById(\'cloudBox\').remove();cloudPush()">Uso quelli di questo dispositivo (invia)</button></div>')}
+var _cfocus=0;
+window.addEventListener('load',function(){setTimeout(function(){cloudStatus();cloudSync(false)},400)});
+window.addEventListener('focus',function(){var n=Date.now();if(n-_cfocus<60000)return;_cfocus=n;cloudSync(false)});
 function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));document.getElementById('view-'+v).classList.add('active');document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===v));const T={dashboard:'Dashboard',rosa:'Rosa Giocatori',calendario:'Calendario',presenze:'Presenze Allenamenti',esercizi:'Archivio Esercizi',partite:'Partite',convocazioni:'Convocazioni',comegiochiamo:'Come Giochiamo',ritiro:'Ritiro',modello:'Modello di Gioco',tattica:'Lavagna Tattica',schede:'Schede Ruolo',statistiche:'Statistiche',valutazioni:'Valutazioni',scadenze:'Scadenze',comunicazioni:'Comunicazioni',impostazioni:'Impostazioni',import:'Import / Backup'};document.getElementById('topbar-title').textContent=T[v]||v;if(window.innerWidth<=900)document.getElementById('sidebar').classList.remove('open');if(typeof window['render_'+v]==='function')window['render_'+v]()}
 document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',()=>showView(el.dataset.view)));
 function openModal(title,body,footer,opts){opts=opts||{};const o=document.createElement('div');o.className='modal-overlay';o.innerHTML=`<div class="modal ${opts.large?'modal-lg':''}"><div class="modal-header"><div class="modal-title">${esc(title)}</div><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button></div><div class="modal-body">${body}</div>${footer?`<div class="modal-footer">${footer}</div>`:''}</div>`;o.addEventListener('click',e=>{if(e.target===o)o.remove()});document.getElementById('modal-root').appendChild(o);return o}
@@ -442,7 +518,7 @@ const body=`<div class="tabs"><div class="tab active" onclick="switchTab(this,'t
 <div class="form-row-3"><div class="form-group"><label class="form-label">Nome*</label><input class="form-input" name="nome" value="${esc(g?.nome||'')}" required></div><div class="form-group"><label class="form-label">Cognome*</label><input class="form-input" name="cognome" value="${esc(g?.cognome||'')}" required></div><div class="form-group"><label class="form-label">N. Maglia</label><input type="number" class="form-input" name="numero" value="${g?.numero||''}"></div></div>
 <div class="form-row-3"><div class="form-group"><label class="form-label">Data Nascita*</label><input type="date" class="form-input" name="dataNascita" value="${g?.dataNascita||''}" required></div><div class="form-group"><label class="form-label">Ruolo</label><select class="form-select" name="ruolo">${Object.keys(RUOLI).map(r=>`<option value="${r}" ${g?.ruolo===r?'selected':''}>${r} - ${RUOLI[r].label}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Piede</label><select class="form-select" name="piede"><option value="destro" ${g?.piede==='destro'?'selected':''}>Destro</option><option value="sinistro" ${g?.piede==='sinistro'?'selected':''}>Sinistro</option><option value="ambidestro" ${g?.piede==='ambidestro'?'selected':''}>Ambidestro</option></select></div></div>
 <div class="form-row"><div class="form-group"><label class="form-label">Stato</label><select class="form-select" name="stato"><option value="attivo" ${g?.stato==='attivo'?'selected':''}>Attivo</option><option value="infortunato" ${g?.stato==='infortunato'?'selected':''}>Infortunato</option><option value="squalificato" ${g?.stato==='squalificato'?'selected':''}>Squalificato</option><option value="sospeso" ${g?.stato==='sospeso'?'selected':''}>Sospeso</option></select></div><div class="form-group"><label class="form-label">Data Ingresso</label><input type="date" class="form-input" name="dataIngresso" value="${g?.dataIngresso||todayISO()}"></div></div>
-<div class="form-group"><label class="form-label">Foto</label><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div id="fotoPrev" style="width:78px;height:78px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,var(--b2),var(--r2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:25px;flex:0 0 auto">${g?.foto?`<img src="${esc(g.foto)}" style="width:100%;height:100%;object-fit:cover;object-position:center 18%">`:`${esc(g?.nome?.[0]||'')}${esc(g?.cognome?.[0]||'')}`}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" onclick="document.getElementById('fotoCam').click()">Scatta foto</button><button type="button" class="btn btn-sec" onclick="document.getElementById('fotoFile').click()">Galleria</button><button type="button" class="btn btn-sec" onclick="fotoClear()">Rimuovi</button></div></div><input type="file" id="fotoCam" accept="image/*" capture="environment" style="display:none" onchange="fotoPick(this)"><input type="file" id="fotoFile" accept="image/*" style="display:none" onchange="fotoPick(this)"><input type="hidden" name="foto" id="fotoData" value="${esc(g?.foto||'')}"><div id="fotoMsg" style="font-size:11px;color:var(--muted);margin-top:6px">Dal telefono: "Scatta foto" apre la fotocamera. Poi premi Salva.</div></div>
+<div class="form-group"><label class="form-label">Foto</label><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div id="fotoPrev" style="width:78px;height:78px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,var(--b2),var(--r2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:25px;flex:0 0 auto">${g?.foto?`<img src="${esc(g.foto)}" style="width:100%;height:100%;object-fit:cover">`:`${esc(g?.nome?.[0]||'')}${esc(g?.cognome?.[0]||'')}`}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" onclick="document.getElementById('fotoCam').click()">Scatta foto</button><button type="button" class="btn btn-sec" onclick="document.getElementById('fotoFile').click()">Galleria</button><button type="button" class="btn btn-sec" onclick="fotoClear()">Rimuovi</button></div></div><input type="file" id="fotoCam" accept="image/*" capture="environment" style="display:none" onchange="fotoPick(this)"><input type="file" id="fotoFile" accept="image/*" style="display:none" onchange="fotoPick(this)"><input type="hidden" name="foto" id="fotoData" value="${esc(g?.foto||'')}"><div id="fotoMsg" style="font-size:11px;color:var(--muted);margin-top:6px">Dal telefono: "Scatta foto" apre la fotocamera. Poi premi Salva.</div></div>
 </div>
 <div id="tab-cont" class="tab-pane" style="display:none">
 <div class="form-row"><div class="form-group"><label class="form-label">Telefono Giocatore</label><input class="form-input" name="telefono" value="${esc(g?.telefono||'')}"></div><div class="form-group"><label class="form-label">Email</label><input class="form-input" name="email" value="${esc(g?.email||'')}"></div></div>
