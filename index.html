@@ -188,6 +188,8 @@ tr.clickable{cursor:pointer}
 /* PARTITA_LAVAGNA_v1: dentro il modal il campo sta in 340px, altrimenti i 480px
    della lavagna tattica costringono a scorrere per vedere la difesa. */
 .modal-overlay .field-container{max-width:340px}
+/* FORMAZIONE_BLOCCO_v1: i tab restano appesi in alto mentre si scorre la lavagna, se no i campi di Eventi e Sostituzioni sembrano non esserci. */
+.modal-overlay .tabs{position:sticky;top:0;z-index:6;background:#fff;margin:0;padding-top:2px}
 @media print{
   .sidebar,.topbar,.no-print,.fab,.reminder-pop{display:none!important}
   .content{padding:0}
@@ -225,7 +227,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.01b - calendario stagione + lavagna partita</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.01c - formazione salvabile e bloccabile</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -686,32 +688,25 @@ function render_partite(){const partite=DATA.eventi.filter(isP).sort((a,b)=>(b.d
 ${partite.length===0?'<div class="empty-state">Nessuna partita</div>':`<div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>Data</th><th>Tipo</th><th>Casa</th><th>Risultato</th><th>Trasferta</th><th>Marcatori</th><th></th></tr></thead><tbody>${partite.map(p=>{const isCasa=p.casaTrasferta==='casa';const home=isCasa?'<strong>Calenzano</strong>':esc(p.avversario||'');const away=isCasa?esc(p.avversario||''):'<strong>Calenzano</strong>';const gol=(p.eventiPartita||[]).filter(ev=>ev.tipo==='gol').map(ev=>{const g=fG(ev.giocatoreId);return g?pLink(g):''}).filter(Boolean).join(', ');return `<tr><td onclick="openEventoModal('${p.id}')" style="cursor:pointer">${fmtDate(p.data)}<br><span style="font-size:11px;color:var(--muted)">${p.ora||''}</span></td><td><span class="badge ${p.tipo==='partita'?'badge-att':'badge-warn'}">${evL(p)}</span></td><td>${home}</td><td style="text-align:center;font-weight:700;font-size:16px">${p.golCasa||0} - ${p.golTrasferta||0}</td><td>${away}</td><td style="font-size:11px">${gol||'-'}</td><td><button class="btn btn-secondary btn-sm" onclick="openPartitaDettagli('${p.id}')">Dettagli</button></td></tr>`}).join('')}</tbody></table></div>`}`}
 
 function openPartitaDettagli(id){const e=fE(id);if(!e)return;
+/* FORMAZIONE_BLOCCO_v1: la scheda si riapre a ogni click sulla lavagna e a ogni
+   modifica. Senza questo, i modali si impilano: gli id dei tab si duplicano e
+   switchTab (che usa getElementById) va a colpire il pane del modale sotto,
+   percio' cliccare Eventi o Sostituzioni sembra non fare nulla. */
+closeModal();
 const formazione=e.formazione||[],panchina=e.panchina||[],sostituzioni=e.sostituzioni||[],eventi=e.eventiPartita||[];const dispo=DATA.giocatori.filter(g=>!formazione.includes(g.id)&&!panchina.includes(g.id));
 // Build chronological timeline
 const tl=[];eventi.forEach(ev=>tl.push({min:ev.minuto||0,tipo:ev.tipo,gioc:ev.giocatoreId,kind:'ev'}));sostituzioni.forEach(s=>tl.push({min:s.minuto||0,gIn:s.in,gOut:s.out,kind:'sub'}));tl.sort((a,b)=>a.min-b.min);
 const tlHtml=tl.length?tl.map(x=>{if(x.kind==='sub'){const gI=fG(x.gIn),gO=fG(x.gOut);return `<div class="timeline-ev sub"><div class="minute">${x.min}'</div><div><strong>Sostituzione</strong><br><span style="color:var(--r2)">OUT: ${gO?pLink(gO):'-'}</span> &nbsp; <span style="color:var(--ok)">IN: ${gI?pLink(gI):'-'}</span></div></div>`}else{const g=fG(x.gioc);const labels={gol:'GOL',assist:'Assist',giallo:'Cartellino Giallo',rosso:'Cartellino Rosso',autogol:'Autogol',rigore:'Rigore segnato',rigoreSbagliato:'Rigore sbagliato',tiroDx:'Tiro destro',tiroSx:'Tiro sinistro',tiroTesta:'Tiro di testa'};const cls=x.tipo==='gol'?'gol':x.tipo==='giallo'?'giallo':x.tipo==='rosso'||x.tipo==='autogol'?'rosso':'';return `<div class="timeline-ev ${cls}"><div class="minute">${x.min}'</div><div><strong>${labels[x.tipo]||x.tipo}</strong><br>${g?pLink(g):'-'}</div></div>`}}).join(''):'<div class="empty-state">Nessun evento registrato per questa partita</div>';
 
 const body=`<div class="tabs"><div class="tab active" onclick="switchTab(this,'tab-form')">Formazione</div><div class="tab" onclick="switchTab(this,'tab-eventi')">Eventi</div><div class="tab" onclick="switchTab(this,'tab-sub')">Sostituzioni</div><div class="tab" onclick="switchTab(this,'tab-info')">Info Partita</div></div>
-<div id="tab-form" class="tab-pane">
-<div class="toolbar no-print" style="padding:0 0 10px"><label class="form-label" style="margin:0">Modulo:</label><select class="form-select" style="width:auto" id="mod-sel" onchange="updMod('${id}')">${Object.keys(MODULI).map(m=>`<option value="${m}" ${e.modulo===m?'selected':''}>${m}</option>`).join('')}</select><button class="btn btn-secondary btn-sm" onclick="partAuto('${id}')">Auto-Assegna</button><button class="btn btn-secondary btn-sm" onclick="partReset('${id}')">Svuota campo</button></div>
-<div class="grid" style="grid-template-columns:1fr 250px;gap:16px;align-items:start">
-<div><div class="field-container"><div class="field-bg"></div>
-${_partMod(e).map((p,i)=>{const gId=_partPos(e)[i];const g=gId?fG(gId):null;return `<div class="player-spot" style="left:${p.x}%;top:${p.y}%" onclick="selPart('${id}',${i})" title="${RUOLI[p.r]?.label||p.r}"><div class="player-token ${p.r==='POR'?'por':''} ${!g?'empty':''}">${g?(g.numero||''):p.r}</div>${g?`<div class="player-surname">${esc(g.cognome)}</div>`:''}</div>`}).join('')}
-</div>
-<h4 style="color:var(--b1);margin:14px 0 8px">Panchina (${panchina.length})</h4>
-${panchina.length?panchina.map(gId=>{const g=fG(gId);return g?`<div class="convoca-row"><span class="badge ${rBadge(g.ruolo)}">${g.numero||'-'}</span><span class="name">${pLink(g)}</span><span class="ruolo">${g.ruolo||''}</span><button class="btn btn-sm btn-secondary" onclick="partPanca('${id}','${gId}',event)">Togli</button></div>`:''}).join(''):'<div class="empty-state" style="padding:10px;font-size:12px">Nessuno in panchina</div>'}
-</div>
-<div><p style="font-size:11px;color:var(--muted);margin-bottom:6px">Clicca un giocatore, poi una posizione sul campo. "Panca" lo mette fra le riserve.</p>
-<div style="max-height:460px;overflow-y:auto">${listaRuoliHTML(DATA.giocatori.filter(g=>!(e.formazione||[]).includes(g.id)&&!(e.panchina||[]).includes(g.id)),g=>`_partSel='${g.id}';openPartitaDettagli('${id}');toast('Selezionato ${esc(fn(g))}')`,_partSel,g=>`<button class="btn btn-sm btn-secondary" onclick="partPanca('${id}','${g.id}',event)">Panca</button>`)}</div></div>
-</div>
-</div>
+<div id="tab-form" class="tab-pane">${tabFormazioneHTML(e,id)}</div>
 <div id="tab-eventi" class="tab-pane" style="display:none">
 ${eventi.length?eventi.sort((a,b)=>(a.minuto||0)-(b.minuto||0)).map((ev,i)=>{const g=fG(ev.giocatoreId);const tipi={gol:'Gol',assist:'Assist',giallo:'Giallo',rosso:'Rosso',autogol:'Autogol',rigore:'Rigore',rigoreSbagliato:'Rig. Sbagl.',tiroDx:'Tiro destro',tiroSx:'Tiro sinistro',tiroTesta:'Tiro di testa'};const c={gol:'badge-ok',assist:'badge-info',giallo:'badge-warn',rosso:'badge-danger',autogol:'badge-danger'}[ev.tipo]||'badge-muted';return `<div class="convoca-row"><span style="font-weight:700;min-width:40px">${ev.minuto||'-'}'</span><span class="badge ${c}">${tipi[ev.tipo]||ev.tipo}</span><span class="name">${g?pLink(g):'-'}</span><button class="btn btn-sm btn-danger" onclick="rmEvP('${id}',${i})">X</button></div>`}).join(''):'<div class="empty-state">Nessun evento</div>'}
-<div style="margin-top:14px;padding:14px;background:var(--b4);border-radius:8px"><h5 style="margin-bottom:10px">+ Aggiungi evento</h5><div class="form-row-4"><select class="form-select" id="ev-tipo"><option value="gol">Gol</option><option value="assist">Assist</option><option value="giallo">Giallo</option><option value="rosso">Rosso</option><option value="autogol">Autogol</option><option value="rigore">Rigore</option><option value="rigoreSbagliato">Rig.Sbagl.</option><option value="tiroDx">Tiro destro</option><option value="tiroSx">Tiro sinistro</option><option value="tiroTesta">Tiro di testa</option></select><select class="form-select" id="ev-gioc">${[...formazione,...panchina].map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><input type="number" class="form-input" id="ev-min" placeholder="Minuto" min="1" max="90"><button class="btn btn-primary btn-sm" onclick="addEvP('${id}')">+</button></div></div>
+<div style="margin-top:14px;padding:14px;background:var(--b4);border-radius:8px"><h5 style="margin-bottom:10px">+ Aggiungi evento</h5><div class="form-row-4"><select class="form-select" id="ev-tipo"><option value="gol">Gol</option><option value="assist">Assist</option><option value="giallo">Giallo</option><option value="rosso">Rosso</option><option value="autogol">Autogol</option><option value="rigore">Rigore</option><option value="rigoreSbagliato">Rig.Sbagl.</option><option value="tiroDx">Tiro destro</option><option value="tiroSx">Tiro sinistro</option><option value="tiroTesta">Tiro di testa</option></select><select class="form-select" id="ev-gioc">${[...formazione,...panchina].map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><input type="number" class="form-input" id="ev-min" placeholder="Minuto" min="1" max="${e.durata||70}"><button class="btn btn-primary btn-sm" onclick="addEvP('${id}')">+</button></div></div>
 </div>
 <div id="tab-sub" class="tab-pane" style="display:none">
 ${sostituzioni.map((s,i)=>{const gI=fG(s.in),gO=fG(s.out);return `<div class="convoca-row"><span style="font-weight:700;min-width:40px">${s.minuto||'-'}'</span><span style="color:var(--r2)">OUT: ${gO?pLink(gO):'-'}</span><span style="color:var(--ok)">IN: ${gI?pLink(gI):'-'}</span><button class="btn btn-sm btn-danger" onclick="rmSub('${id}',${i})">X</button></div>`}).join('')}
-<div style="margin-top:14px;padding:14px;background:var(--b4);border-radius:8px"><h5 style="margin-bottom:10px">+ Aggiungi sostituzione (max 7)</h5><div class="form-row-4"><select class="form-select" id="sub-out"><option value="">Esce...</option>${formazione.map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><select class="form-select" id="sub-in"><option value="">Entra...</option>${panchina.map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><input type="number" class="form-input" id="sub-min" placeholder="Min" min="1" max="90"><button class="btn btn-primary btn-sm" onclick="addSub('${id}')">+</button></div></div>
+<div style="margin-top:14px;padding:14px;background:var(--b4);border-radius:8px"><h5 style="margin-bottom:10px">+ Aggiungi sostituzione (max 7)</h5><div class="form-row-4"><select class="form-select" id="sub-out"><option value="">Esce...</option>${formazione.map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><select class="form-select" id="sub-in"><option value="">Entra...</option>${panchina.map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><input type="number" class="form-input" id="sub-min" placeholder="Min" min="1" max="${e.durata||70}"><button class="btn btn-primary btn-sm" onclick="addSub('${id}')">+</button></div></div>
 </div>
 <div id="tab-info" class="tab-pane" style="display:none">
 <div style="background:var(--b4);padding:14px;border-radius:8px;margin-bottom:14px">
@@ -726,7 +721,7 @@ ${sostituzioni.map((s,i)=>{const gI=fG(s.in),gO=fG(s.out);return `<div class="co
 <div style="margin-top:14px;display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openEventoModal('${id}')">Modifica info</button><button class="btn btn-wa btn-sm" onclick="shareEventoWA('${id}')">Condividi WA</button></div>
 </div>`;
 openModal('Dettagli Partita - '+fmtDate(e.data),body,`<button class="btn btn-secondary" onclick="stampaPartita('${id}')">Stampa</button> <button class="btn btn-wa" onclick="shareEventoWA('${id}')">WhatsApp</button> <button class="btn btn-primary" onclick="closeModal()">Chiudi</button>`,{large:true})}
-function updMod(id){const e=fE(id);e.modulo=document.getElementById('mod-sel').value;const avevo=(e.formazione||[]).slice();delete e.formazionePos;e.formazione=avevo;_partPos(e);_partSync(e);saveData();openPartitaDettagli(id);toast('Modulo aggiornato')}
+function updMod(id){const e=fE(id);if(_partBloccata(e))return;e.modulo=document.getElementById('mod-sel').value;const avevo=(e.formazione||[]).slice();delete e.formazionePos;e.formazione=avevo;_partPos(e);_partSync(e);saveData();openPartitaDettagli(id);toast('Modulo aggiornato')}
 function addTit(id,gId){if(!gId)return;const e=fE(id);if(!e.formazione)e.formazione=[];if(e.formazione.length>=11){toast('Max 11 titolari',true);return}e.formazione.push(gId);saveData();openPartitaDettagli(id)}
 function rmTit(id,gId){const e=fE(id);e.formazione=(e.formazione||[]).filter(x=>x!==gId);saveData();openPartitaDettagli(id)}
 function addPan(id,gId){if(!gId)return;const e=fE(id);if(!e.panchina)e.panchina=[];e.panchina.push(gId);saveData();openPartitaDettagli(id)}
@@ -867,7 +862,7 @@ function _partPos(e){
  }
  return e.formazionePos}
 function _partSync(e){const P=e.formazionePos||{};e.formazione=_partMod(e).map((p,i)=>P[i]).filter(Boolean)}
-function selPart(id,idx){const e=fE(id);const P=_partPos(e);
+function selPart(id,idx){const e=fE(id);if(_partBloccata(e))return;const P=_partPos(e);
  if(_partSel){
   e.panchina=(e.panchina||[]).filter(x=>x!==_partSel);
   Object.keys(P).forEach(k=>{if(P[k]===_partSel)delete P[k]});
@@ -876,13 +871,13 @@ function selPart(id,idx){const e=fE(id);const P=_partPos(e);
  else{toast('Prima clicca un giocatore dalla lista');return}
  _partSync(e);saveData();openPartitaDettagli(id)}
 function partPanca(id,gId,ev){if(ev)ev.stopPropagation();
- const e=fE(id),P=_partPos(e);
+ const e=fE(id);if(_partBloccata(e))return;const P=_partPos(e);
  Object.keys(P).forEach(k=>{if(P[k]===gId)delete P[k]});
  e.panchina=e.panchina||[];
  e.panchina=e.panchina.includes(gId)?e.panchina.filter(x=>x!==gId):e.panchina.concat([gId]);
  if(_partSel===gId)_partSel=null;
  _partSync(e);saveData();openPartitaDettagli(id)}
-function partAuto(id){const e=fE(id),pos=_partMod(e),P={},usati=new Set();
+function partAuto(id){const e=fE(id);if(_partBloccata(e))return;const pos=_partMod(e),P={},usati=new Set();
  pos.forEach((p,i)=>{const c=ordinaRosa(DATA.giocatori.filter(g=>!usati.has(g.id)&&g.ruolo===p.r));if(c.length){P[i]=c[0].id;usati.add(c[0].id)}});
  pos.forEach((p,i)=>{if(P[i]!==undefined)return;const c=ordinaRosa(DATA.giocatori.filter(g=>!usati.has(g.id)&&rCat(g.ruolo)===rCat(p.r)));if(c.length){P[i]=c[0].id;usati.add(c[0].id)}});
  /* finche' i ruoli non sono assegnati a tutta la rosa, il terzo giro riempie
@@ -890,7 +885,7 @@ function partAuto(id){const e=fE(id),pos=_partMod(e),P={},usati=new Set();
  pos.forEach((p,i)=>{if(P[i]!==undefined)return;const c=ordinaRosa(DATA.giocatori.filter(g=>!usati.has(g.id)&&(p.r==='POR'||g.ruolo!=='POR')));if(c.length){P[i]=c[0].id;usati.add(c[0].id)}});
  e.formazionePos=P;e.panchina=(e.panchina||[]).filter(x=>!usati.has(x));
  _partSync(e);saveData();openPartitaDettagli(id);toast('Formazione proposta')}
-function partReset(id){if(!confirm('Svuotare il campo? La panchina resta.'))return;
+function partReset(id){const e0=fE(id);if(_partBloccata(e0))return;if(!confirm('Svuotare il campo? La panchina resta.'))return;
  const e=fE(id);e.formazionePos={};_partSync(e);_partSel=null;saveData();openPartitaDettagli(id)}
 
 /* ---- distinta stampabile ---- */
@@ -918,6 +913,46 @@ table{width:100%;border-collapse:collapse;font-size:13px}td{padding:3px 4px;bord
  const w=window.open('','_blank');
  if(!w){toast('Il browser ha bloccato la finestra di stampa',true);return}
  w.document.write(h);w.document.close();w.focus();setTimeout(()=>w.print(),350)}
+
+/* FORMAZIONE_BLOCCO_v1 */
+function _partBloccata(e){if(e&&e.formazioneBloccata){toast('Formazione bloccata: premi Sblocca per modificarla',true);return true}return false}
+function salvaFormazione(id){const e=fE(id);const n=(e.formazione||[]).length;
+ if(n<11&&!confirm('In campo ci sono '+n+' giocatori su 11.\n\nSalvare lo stesso?'))return;
+ e.formazioneBloccata=true;
+ const d=new Date();
+ e.formazioneSalvataIl=d.toLocaleDateString('it-IT')+' alle '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+ _partSel=null;saveData();openPartitaDettagli(id);toast('Formazione salvata e bloccata')}
+function sbloccaFormazione(id){
+ if(!confirm('Vuoi sbloccarlo?\n\nLa formazione tornera\' modificabile.'))return;
+ const e=fE(id);e.formazioneBloccata=false;saveData();openPartitaDettagli(id);toast('Formazione sbloccata')}
+
+function tabFormazioneHTML(e,id){
+ const bloc=!!e.formazioneBloccata, P=_partPos(e), pos=_partMod(e);
+ const panchina=e.panchina||[];
+ const liberi=DATA.giocatori.filter(g=>!(e.formazione||[]).includes(g.id)&&!panchina.includes(g.id));
+ const testa = bloc
+  ? `<div class="toolbar no-print" style="padding:0 0 10px"><span class="badge badge-ok">FORMAZIONE SALVATA</span><span style="font-size:12px;color:var(--muted)">Modulo ${e.modulo||'4-3-3'}${e.formazioneSalvataIl?' - '+e.formazioneSalvataIl:''}</span><div style="flex:1"></div><button class="btn btn-secondary btn-sm" onclick="sbloccaFormazione('${id}')">Sblocca</button></div>`
+  : `<div class="toolbar no-print" style="padding:0 0 10px"><label class="form-label" style="margin:0">Modulo:</label><select class="form-select" style="width:auto" id="mod-sel" onchange="updMod('${id}')">${Object.keys(MODULI).map(m=>`<option value="${m}" ${e.modulo===m?'selected':''}>${m}</option>`).join('')}</select><button class="btn btn-secondary btn-sm" onclick="partAuto('${id}')">Auto-Assegna</button><button class="btn btn-secondary btn-sm" onclick="partReset('${id}')">Svuota campo</button><div style="flex:1"></div><button class="btn btn-primary btn-sm" onclick="salvaFormazione('${id}')">Salva formazione</button></div>`;
+
+ const campo = `<div class="field-container">${bloc?'<div class="field-bg" style="opacity:.92"></div>':'<div class="field-bg"></div>'}
+${pos.map((p,i)=>{const gId=P[i];const g=gId?fG(gId):null;
+ return `<div class="player-spot" style="left:${p.x}%;top:${p.y}%${bloc?';cursor:default':''}" ${bloc?'':`onclick="selPart('${id}',${i})"`} title="${RUOLI[p.r]?.label||p.r}"><div class="player-token ${p.r==='POR'?'por':''} ${!g?'empty':''}">${g?(g.numero||''):p.r}</div>${g?`<div class="player-surname">${esc(g.cognome)}</div>`:''}</div>`}).join('')}
+</div>`;
+
+ const panca = `<h4 style="color:var(--b1);margin:14px 0 8px">Panchina (${panchina.length})</h4>
+${panchina.length?panchina.map(gId=>{const g=fG(gId);return g?`<div class="convoca-row"><span class="badge ${rBadge(g.ruolo)}">${g.numero||'-'}</span><span class="name">${pLink(g)}</span><span class="ruolo">${g.ruolo||''}</span>${bloc?'':`<button class="btn btn-sm btn-secondary" onclick="partPanca('${id}','${gId}',event)">Togli</button>`}</div>`:''}).join(''):'<div class="empty-state" style="padding:10px;font-size:12px">Nessuno in panchina</div>'}`;
+
+ const laterale = bloc
+  ? `<div style="background:var(--b4);border-radius:8px;padding:12px;font-size:12px;color:var(--muted)">La formazione e' salvata e non si puo' modificare.<br><br>Per cambiarla premi <strong>Sblocca</strong> qui sopra.</div>`
+  : `<p style="font-size:11px;color:var(--muted);margin-bottom:6px">Clicca un giocatore, poi una posizione sul campo. "Panca" lo mette fra le riserve.</p>
+<div style="max-height:460px;overflow-y:auto">${listaRuoliHTML(liberi,g=>`_partSel='${g.id}';openPartitaDettagli('${id}');toast('Selezionato ${esc(fn(g))}')`,_partSel,g=>`<button class="btn btn-sm btn-secondary" onclick="partPanca('${id}','${g.id}',event)">Panca</button>`)}</div>`;
+
+ return `${testa}
+<div class="grid" style="grid-template-columns:${bloc?'1fr 220px':'1fr 250px'};gap:16px;align-items:start">
+<div>${campo}${panca}</div>
+<div>${laterale}</div>
+</div>
+<div class="no-print" style="margin-top:14px;padding:10px 12px;background:var(--b4);border-radius:8px;font-size:12px;color:var(--muted)">Gol, assist, ammonizioni, espulsioni, autogol e rigori si inseriscono nel tab <strong>Eventi</strong>; i cambi con il minuto nel tab <strong>Sostituzioni</strong>. Tutto quello che salvi li' viene conteggiato in <strong>Statistiche</strong>.</div>`}
 
 // ============ STATISTICHE ============
 function render_statistiche(){const stt=DATA.giocatori.map(g=>({g,s:stats(g.id),a:attendance(g.id,isA),p:attendance(g.id,isP)}));const tG=stt.slice().sort((a,b)=>b.s.gol-a.s.gol);const tA=stt.slice().sort((a,b)=>b.s.assist-a.s.assist);const tP=stt.slice().sort((a,b)=>b.s.presenze-a.s.presenze);const tAl=stt.slice().sort((a,b)=>b.a.pct-a.a.pct);
