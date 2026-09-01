@@ -190,6 +190,9 @@ tr.clickable{cursor:pointer}
 .modal-overlay .field-container{max-width:340px}
 /* FORMAZIONE_BLOCCO_v1: i tab restano appesi in alto mentre si scorre la lavagna, se no i campi di Eventi e Sostituzioni sembrano non esserci. */
 .modal-overlay .tabs{position:sticky;top:0;z-index:6;background:#fff;margin:0;padding-top:2px}
+/* WA_IMMAGINE_v1: con Panca + Non disp. la riga si stringe: bottoni compatti e mai a capo */
+.modal-overlay .convoca-row .btn-sm{white-space:nowrap;padding:4px 8px;font-size:11px}
+.modal-overlay .convoca-row .name{min-width:0}
 @media print{
   .sidebar,.topbar,.no-print,.fab,.reminder-pop{display:none!important}
   .content{padding:0}
@@ -227,7 +230,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.01c - formazione salvabile e bloccabile</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.01d - formazione su WhatsApp come immagine</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -720,7 +723,7 @@ ${sostituzioni.map((s,i)=>{const gI=fG(s.in),gO=fG(s.out);return `<div class="co
 <div>${tlHtml}</div>
 <div style="margin-top:14px;display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openEventoModal('${id}')">Modifica info</button><button class="btn btn-wa btn-sm" onclick="shareEventoWA('${id}')">Condividi WA</button></div>
 </div>`;
-openModal('Dettagli Partita - '+fmtDate(e.data),body,`<button class="btn btn-secondary" onclick="stampaPartita('${id}')">Stampa</button> <button class="btn btn-wa" onclick="shareEventoWA('${id}')">WhatsApp</button> <button class="btn btn-primary" onclick="closeModal()">Chiudi</button>`,{large:true})}
+openModal('Dettagli Partita - '+fmtDate(e.data)+' - '+matchLabel(e),body,`<button class="btn btn-secondary" onclick="stampaPartita('${id}')">Stampa</button> <button class="btn btn-wa" onclick="condividiPartitaWA('${id}')">WhatsApp</button> <button class="btn btn-primary" onclick="closeModal()">Chiudi</button>`,{large:true})}
 function updMod(id){const e=fE(id);if(_partBloccata(e))return;e.modulo=document.getElementById('mod-sel').value;const avevo=(e.formazione||[]).slice();delete e.formazionePos;e.formazione=avevo;_partPos(e);_partSync(e);saveData();openPartitaDettagli(id);toast('Modulo aggiornato')}
 function addTit(id,gId){if(!gId)return;const e=fE(id);if(!e.formazione)e.formazione=[];if(e.formazione.length>=11){toast('Max 11 titolari',true);return}e.formazione.push(gId);saveData();openPartitaDettagli(id)}
 function rmTit(id,gId){const e=fE(id);e.formazione=(e.formazione||[]).filter(x=>x!==gId);saveData();openPartitaDettagli(id)}
@@ -878,6 +881,7 @@ function partPanca(id,gId,ev){if(ev)ev.stopPropagation();
  if(_partSel===gId)_partSel=null;
  _partSync(e);saveData();openPartitaDettagli(id)}
 function partAuto(id){const e=fE(id);if(_partBloccata(e))return;const pos=_partMod(e),P={},usati=new Set();
+ (e.indisponibili||[]).forEach(x=>usati.add(x));
  pos.forEach((p,i)=>{const c=ordinaRosa(DATA.giocatori.filter(g=>!usati.has(g.id)&&g.ruolo===p.r));if(c.length){P[i]=c[0].id;usati.add(c[0].id)}});
  pos.forEach((p,i)=>{if(P[i]!==undefined)return;const c=ordinaRosa(DATA.giocatori.filter(g=>!usati.has(g.id)&&rCat(g.ruolo)===rCat(p.r)));if(c.length){P[i]=c[0].id;usati.add(c[0].id)}});
  /* finche' i ruoli non sono assegnati a tutta la rosa, il terzo giro riempie
@@ -929,7 +933,8 @@ function sbloccaFormazione(id){
 function tabFormazioneHTML(e,id){
  const bloc=!!e.formazioneBloccata, P=_partPos(e), pos=_partMod(e);
  const panchina=e.panchina||[];
- const liberi=DATA.giocatori.filter(g=>!(e.formazione||[]).includes(g.id)&&!panchina.includes(g.id));
+ const indisp=e.indisponibili||[];
+ const liberi=DATA.giocatori.filter(g=>!(e.formazione||[]).includes(g.id)&&!panchina.includes(g.id)&&!indisp.includes(g.id));
  const testa = bloc
   ? `<div class="toolbar no-print" style="padding:0 0 10px"><span class="badge badge-ok">FORMAZIONE SALVATA</span><span style="font-size:12px;color:var(--muted)">Modulo ${e.modulo||'4-3-3'}${e.formazioneSalvataIl?' - '+e.formazioneSalvataIl:''}</span><div style="flex:1"></div><button class="btn btn-secondary btn-sm" onclick="sbloccaFormazione('${id}')">Sblocca</button></div>`
   : `<div class="toolbar no-print" style="padding:0 0 10px"><label class="form-label" style="margin:0">Modulo:</label><select class="form-select" style="width:auto" id="mod-sel" onchange="updMod('${id}')">${Object.keys(MODULI).map(m=>`<option value="${m}" ${e.modulo===m?'selected':''}>${m}</option>`).join('')}</select><button class="btn btn-secondary btn-sm" onclick="partAuto('${id}')">Auto-Assegna</button><button class="btn btn-secondary btn-sm" onclick="partReset('${id}')">Svuota campo</button><div style="flex:1"></div><button class="btn btn-primary btn-sm" onclick="salvaFormazione('${id}')">Salva formazione</button></div>`;
@@ -942,17 +947,135 @@ ${pos.map((p,i)=>{const gId=P[i];const g=gId?fG(gId):null;
  const panca = `<h4 style="color:var(--b1);margin:14px 0 8px">Panchina (${panchina.length})</h4>
 ${panchina.length?panchina.map(gId=>{const g=fG(gId);return g?`<div class="convoca-row"><span class="badge ${rBadge(g.ruolo)}">${g.numero||'-'}</span><span class="name">${pLink(g)}</span><span class="ruolo">${g.ruolo||''}</span>${bloc?'':`<button class="btn btn-sm btn-secondary" onclick="partPanca('${id}','${gId}',event)">Togli</button>`}</div>`:''}).join(''):'<div class="empty-state" style="padding:10px;font-size:12px">Nessuno in panchina</div>'}`;
 
+ const nonDisp = `<h4 style="color:var(--r2);margin:14px 0 8px">Non disponibili (${indisp.length})</h4>
+${indisp.length?indisp.map(gId=>{const g=fG(gId);return g?`<div class="convoca-row" style="opacity:.75"><span class="badge ${rBadge(g.ruolo)}">${g.numero||'-'}</span><span class="name" style="text-decoration:line-through">${esc(fn(g))}</span><span class="ruolo">${g.ruolo||''}</span>${bloc?'':`<button class="btn btn-sm btn-secondary" onclick="partIndisp('${id}','${gId}',event)">Rendi disponibile</button>`}</div>`:''}).join(''):'<div class="empty-state" style="padding:10px;font-size:12px">Nessuno: sono tutti disponibili</div>'}`;
+
  const laterale = bloc
   ? `<div style="background:var(--b4);border-radius:8px;padding:12px;font-size:12px;color:var(--muted)">La formazione e' salvata e non si puo' modificare.<br><br>Per cambiarla premi <strong>Sblocca</strong> qui sopra.</div>`
   : `<p style="font-size:11px;color:var(--muted);margin-bottom:6px">Clicca un giocatore, poi una posizione sul campo. "Panca" lo mette fra le riserve.</p>
-<div style="max-height:460px;overflow-y:auto">${listaRuoliHTML(liberi,g=>`_partSel='${g.id}';openPartitaDettagli('${id}');toast('Selezionato ${esc(fn(g))}')`,_partSel,g=>`<button class="btn btn-sm btn-secondary" onclick="partPanca('${id}','${g.id}',event)">Panca</button>`)}</div>`;
+<div style="max-height:460px;overflow-y:auto">${listaRuoliHTML(liberi,g=>`_partSel='${g.id}';openPartitaDettagli('${id}');toast('Selezionato ${esc(fn(g))}')`,_partSel,g=>`<button class="btn btn-sm btn-secondary" onclick="partPanca('${id}','${g.id}',event)">Panca</button> <button class="btn btn-sm btn-secondary" onclick="partIndisp('${id}','${g.id}',event)" title="Segna come non disponibile">Non disp.</button>`)}</div>`;
 
  return `${testa}
-<div class="grid" style="grid-template-columns:${bloc?'1fr 220px':'1fr 250px'};gap:16px;align-items:start">
-<div>${campo}${panca}</div>
+<div class="grid" style="grid-template-columns:${bloc?'1fr 220px':'1fr 320px'};gap:16px;align-items:start">
+<div>${campo}${panca}${nonDisp}</div>
 <div>${laterale}</div>
 </div>
 <div class="no-print" style="margin-top:14px;padding:10px 12px;background:var(--b4);border-radius:8px;font-size:12px;color:var(--muted)">Gol, assist, ammonizioni, espulsioni, autogol e rigori si inseriscono nel tab <strong>Eventi</strong>; i cambi con il minuto nel tab <strong>Sostituzioni</strong>. Tutto quello che salvi li' viene conteggiato in <strong>Statistiche</strong>.</div>`}
+
+/* WA_IMMAGINE_v1 */
+const CASA_NOME='Calenzano';
+function matchLabel(e){const av=(e.avversario||'').trim()||'Avversario';
+ return e.casaTrasferta==='trasferta'?(av+' - '+CASA_NOME):(CASA_NOME+' - '+av)}
+
+/* ---- indisponibili ---- */
+function partIndisp(id,gId,ev){if(ev)ev.stopPropagation();
+ const e=fE(id);if(_partBloccata(e))return;
+ const P=_partPos(e);
+ Object.keys(P).forEach(k=>{if(P[k]===gId)delete P[k]});
+ e.panchina=(e.panchina||[]).filter(x=>x!==gId);
+ e.indisponibili=e.indisponibili||[];
+ e.indisponibili=e.indisponibili.includes(gId)?e.indisponibili.filter(x=>x!==gId):e.indisponibili.concat([gId]);
+ if(_partSel===gId)_partSel=null;
+ _partSync(e);saveData();openPartitaDettagli(id)}
+
+/* ---- immagine della formazione ---- */
+function formazioneCanvas(e){
+ const P=_partPos(e),pos=_partMod(e);
+ const pan=(e.panchina||[]).map(fG).filter(Boolean);
+ const ind=(e.indisponibili||[]).map(fG).filter(Boolean);
+ const W=760,HEAD=176,FX=30,FW=700,FH=1050,FY=HEAD;
+ const righeSotto=Math.ceil(pan.length/2)+ (ind.length?Math.ceil(ind.length/2)+2:0);
+ const H=FY+FH+56+righeSotto*30+70;
+ const c=document.createElement('canvas');c.width=W;c.height=H;
+ const x=c.getContext('2d');
+ x.fillStyle='#fff';x.fillRect(0,0,W,H);
+ /* intestazione */
+ x.fillStyle='#0d2b5c';x.font='bold 34px system-ui,Segoe UI,Arial';x.textAlign='center';
+ x.fillText(matchLabel(e).toUpperCase(),W/2,52);
+ x.fillStyle='#6b7280';x.font='17px system-ui,Segoe UI,Arial';
+ const d1=fmtDateLong(e.data)+(e.ora?' - ore '+e.ora:'');
+ x.fillText(d1,W/2,84);
+ const d2=[e.luogo,e.competizione].filter(Boolean).join(' - ');
+ if(d2)x.fillText(d2,W/2,110);
+ x.fillStyle='#0d2b5c';x.font='bold 19px system-ui,Segoe UI,Arial';
+ x.fillText('Formazione '+(e.modulo||'4-3-3'),W/2,146);
+ /* campo */
+ const g=x.createLinearGradient(0,FY,0,FY+FH);g.addColorStop(0,'#1e3a8a');g.addColorStop(1,'#0d2b5c');
+ x.fillStyle=g;
+ if(x.roundRect){x.beginPath();x.roundRect(FX,FY,FW,FH,14);x.fill()}else x.fillRect(FX,FY,FW,FH);
+ const m=26;
+ x.strokeStyle='rgba(255,255,255,.6)';x.lineWidth=3;
+ x.strokeRect(FX+m,FY+m,FW-2*m,FH-2*m);
+ x.beginPath();x.moveTo(FX+m,FY+FH/2);x.lineTo(FX+FW-m,FY+FH/2);x.stroke();
+ x.beginPath();x.arc(FX+FW/2,FY+FH/2,74,0,Math.PI*2);x.stroke();
+ const aw=300,ah=130;
+ x.strokeRect(FX+(FW-aw)/2,FY+FH-m-ah,aw,ah);
+ x.strokeRect(FX+(FW-aw)/2,FY+m,aw,ah);
+ /* giocatori */
+ pos.forEach((p,i)=>{const gId=P[i],gg=gId?fG(gId):null;
+  const cx=FX+FW*p.x/100, cy=FY+FH*p.y/100;
+  x.beginPath();x.arc(cx,cy,25,0,Math.PI*2);
+  x.fillStyle=(p.r==='POR')?'#dc2626':'#ffffff';x.fill();
+  x.lineWidth=3;x.strokeStyle='#0d2b5c';x.stroke();
+  x.fillStyle=(p.r==='POR')?'#ffffff':'#0d2b5c';
+  x.font='bold 19px system-ui,Segoe UI,Arial';x.textAlign='center';x.textBaseline='middle';
+  x.fillText(gg?String(gg.numero||''):p.r,cx,cy+1);
+  x.textBaseline='alphabetic';
+  if(gg){const t=(gg.cognome||fn(gg));x.font='bold 15px system-ui,Segoe UI,Arial';
+   const w=x.measureText(t).width+16;
+   x.fillStyle='rgba(0,0,0,.6)';
+   if(x.roundRect){x.beginPath();x.roundRect(cx-w/2,cy+30,w,22,5);x.fill()}else x.fillRect(cx-w/2,cy+30,w,22);
+   x.fillStyle='#fff';x.fillText(t,cx,cy+46)}
+ });
+ /* panchina e indisponibili */
+ let y=FY+FH+42;
+ const colonna=(titolo,arr,colore)=>{
+  x.textAlign='left';x.fillStyle=colore;x.font='bold 17px system-ui,Segoe UI,Arial';
+  x.fillText(titolo.toUpperCase()+' ('+arr.length+')',FX,y);y+=26;
+  x.fillStyle='#1f2937';x.font='16px system-ui,Segoe UI,Arial';
+  if(!arr.length){x.fillStyle='#6b7280';x.fillText('-',FX,y);y+=28;return}
+  arr.forEach((gg,i)=>{const col=i%2, yy=y+Math.floor(i/2)*28;
+   x.fillText((gg.numero?gg.numero+'  ':'')+fn(gg),FX+col*350,yy)});
+  y+=Math.ceil(arr.length/2)*28+14};
+ colonna('Panchina',pan,'#0d2b5c');
+ if(ind.length)colonna('Non disponibili',ind,'#dc2626');
+ x.textAlign='center';x.fillStyle='#6b7280';x.font='14px system-ui,Segoe UI,Arial';
+ x.fillText('Calenzano Giovanissimi B 2013 - Stagione 2026/27',W/2,H-18);
+ return c}
+
+function testoPartitaWA(e){
+ let t='*'+matchLabel(e).toUpperCase()+'*\n'+evL(e)+' - '+fmtDateLong(e.data)+(e.ora?' - ore '+e.ora:'');
+ if(e.luogo)t+='\n'+e.luogo;
+ if(e.competizione)t+='\n'+e.competizione;
+ if(e.golCasa||e.golTrasferta)t+='\n\n*RISULTATO: '+(e.golCasa||0)+' - '+(e.golTrasferta||0)+'*';
+ const P=_partPos(e),pos=_partMod(e);
+ if((e.formazione||[]).length){t+='\n\n*Formazione ('+(e.modulo||'4-3-3')+'):*';
+  pos.forEach((p,i)=>{const g=P[i]?fG(P[i]):null;if(g)t+='\n'+(g.numero?g.numero+' ':'')+fn(g)})}
+ if((e.panchina||[]).length){t+='\n\n*Panchina:*';
+  e.panchina.forEach(id=>{const g=fG(id);if(g)t+='\n'+(g.numero?g.numero+' ':'')+fn(g)})}
+ if((e.indisponibili||[]).length){t+='\n\n*Non disponibili:*';
+  e.indisponibili.forEach(id=>{const g=fG(id);if(g)t+='\n'+fn(g)})}
+ return t}
+
+function condividiPartitaWA(id){
+ const e=fE(id);if(!e)return;
+ const testo=testoPartitaWA(e);
+ const nome='formazione-'+(e.data||'')+'.png';
+ let file=null;
+ try{
+  const dataUrl=formazioneCanvas(e).toDataURL('image/png');
+  const bin=atob(dataUrl.split(',')[1]);const arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  file=new File([arr],nome,{type:'image/png'});
+  window._ultimaFormazionePNG=dataUrl;
+ }catch(err){console.warn('immagine formazione',err)}
+ if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+  navigator.share({files:[file],text:testo}).catch(()=>{});
+  return}
+ if(file){const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=nome;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast('Immagine scaricata: allegala al messaggio WhatsApp');}
+ window.open('https://wa.me/?text='+encodeURIComponent(testo),'_blank')}
 
 // ============ STATISTICHE ============
 function render_statistiche(){const stt=DATA.giocatori.map(g=>({g,s:stats(g.id),a:attendance(g.id,isA),p:attendance(g.id,isP)}));const tG=stt.slice().sort((a,b)=>b.s.gol-a.s.gol);const tA=stt.slice().sort((a,b)=>b.s.assist-a.s.assist);const tP=stt.slice().sort((a,b)=>b.s.presenze-a.s.presenze);const tAl=stt.slice().sort((a,b)=>b.a.pct-a.a.pct);
