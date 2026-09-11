@@ -230,7 +230,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.11a - convocazione WhatsApp con i soli nomi</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.11b - convocazione WhatsApp con i soli nomi</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -811,7 +811,8 @@ const w=window.open('','_blank');w.document.write(html);w.document.close();setTi
 
 /* WA_CONVOCAZIONE_v1 */
 function shareConvocazioneWA(id){const e=fE(id);saveConvocazione(id);const convocati=[...(e.formazione||[]),...(e.panchina||[])].map(gId=>fG(gId)).filter(Boolean).sort((a,b)=>(a.numero||99)-(b.numero||99));
-const t=`CONVOCAZIONE ${DATA.squadra.nome.toUpperCase()} ${DATA.squadra.categoria}\n${e.competizione||'Partita'}\n${matchLabel(e)}\nData: ${fmtDateLong(e.data)}\nOrario Partita: ${e.ora||'-'}\nOra Ritrovo: ${e.oraRitrovo||e.ora||'-'}\nLuogo: ${e.luogo||'-'}\n\nConvocati (${convocati.length}):\n${convocati.map((g,i)=>`${i+1}. ${fn(g)}`).join('\n')}\n\nMateriale: Entrambe le divise complete, k-way, borraccia.\nMister ${DATA.squadra.allenatore||'Roberto Ramazio'}`;
+/* WA_CONVOCAZIONE_v2 */
+const t=`*CONVOCAZIONE ${DATA.squadra.nome.toUpperCase()} ${DATA.squadra.categoria}*\n*${e.competizione||'Partita'}*\n${matchLabel(e)}\n*Data:* ${fmtDateLong(e.data)}\n*Orario Partita:* ${e.ora||'-'}\n*Ora Ritrovo:* ${e.oraRitrovo||e.ora||'-'}\n*Luogo:* ${e.luogo||'-'}\n\n*Convocati (${convocati.length}):*\n${convocati.map((g,i)=>`${i+1}. ${fn(g)}`).join('\n')}\n\nMateriale: Entrambe le divise complete, k-way, borraccia.\nMister ${DATA.squadra.allenatore||'Roberto Ramazio'}`;
 shareWAGruppo(t)}
 
 // ============ TATTICA ============
