@@ -230,7 +230,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.11b - convocazione WhatsApp con i soli nomi</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.09.11c - convocazione WhatsApp, condivisione nativa sul telefono</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -524,7 +524,13 @@ function closeModal(){document.querySelectorAll('.modal-overlay').forEach(o=>o.r
 function resetForm(formId){if(!confirm('Sei sicuro? Verranno cancellati tutti i campi non ancora salvati.'))return;const f=document.getElementById(formId);if(f)f.reset()}
 function waLink(text){return 'https://wa.me/?text='+encodeURIComponent(text)}
 function waLinkPhone(phone,text){const ph=String(phone||'').replace(/[^0-9]/g,'');if(!ph){toast('Numero telefono mancante',true);return null}return 'https://wa.me/'+(ph.startsWith('39')?ph:'39'+ph)+'?text='+encodeURIComponent(text)}
-function shareWA(text){window.open(waLink(text),'_blank')}
+/* WA_SHARE_NATIVO_v1 */
+function _waMobile(){try{return navigator.maxTouchPoints>0&&/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)}catch(e){return false}}
+function shareWA(text){
+ if(_waMobile()&&navigator.share){
+  try{navigator.share({text:text}).catch(err=>{if(err&&(err.name==='AbortError'||err.name==='NotAllowedError'))return;window.open(waLink(text),'_blank')});return}catch(e){}
+ }
+ window.open(waLink(text),'_blank')}
 function shareWAGruppo(text){if(DATA.squadra.whatsappGruppo){const u=DATA.squadra.whatsappGruppo.includes('chat.whatsapp.com')?DATA.squadra.whatsappGruppo:waLink(text);window.open(u,'_blank');if(u.includes('chat.whatsapp.com'))navigator.clipboard.writeText(text).then(()=>toast('Testo copiato. Incollalo nel gruppo'))}else shareWA(text)}
 function switchTab(el,paneId){el.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');el.closest('.modal-body, .view').querySelectorAll('.tab-pane').forEach(p=>p.style.display='none');document.getElementById(paneId).style.display='block'}
 
