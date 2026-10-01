@@ -229,6 +229,9 @@ tr.clickable{cursor:pointer}
 .pc-stato{font-size:12px;margin-left:8px}
 .pc-stato.err{color:var(--r2);font-weight:600;display:block;margin:6px 0 0}
 .pc-url{font-size:11px;color:var(--muted);margin-top:6px}
+/* REGISTRAZIONI_v1 */
+.reg-box{margin-top:6px}
+.reg-box .convoca-row .name{flex:1;min-width:0;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -258,7 +261,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01f - rosa fuori dalla pagina pubblica</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01g - registrazioni del secondo allenatore</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -836,15 +839,17 @@ righe.forEach(r=>{r.presente=!!r.g1&&(r.tipo==='sostituzione'?sub.some(s=>s.out=
 righe.forEach((r,j)=>{r.doppione=0;if(!r.g1)return;for(let k=0;k<righe.length;k++){if(k===j)continue;const q=righe[k];if(q.tipo!==r.tipo||q.g1!==r.g1||(r.tipo==='sostituzione'&&q.g2!==r.g2))continue;
 const a=_vSec(r.ora),b=_vSec(q.ora);if(a===null||b===null||a===b||Math.abs(a-b)>180)continue;
 /* si tiene quella col minuto (la clip prima del fischio non ce l'ha); a parita' la prima */
-if((q.minuto!==''&&r.minuto==='')||((q.minuto!=='')===(r.minuto!=='')&&k<j)){r.doppione=k+1;break}}})}
+if((q.minuto!==''&&r.minuto==='')||((q.minuto!=='')===(r.minuto!=='')&&k<j)){r.doppione=k+1;break}}})
+/* REGISTRAZIONI_v1: lo stesso evento fra clip e registrazione (+-2') si tiene dalle clip; dentro la stessa registrazione, ripetuto entro 60 s */
+righe.forEach((r,j)=>{if(r.doppione||r.fonte!=='registrazione'||!r.g1)return;for(let k=0;k<righe.length;k++){if(k===j)continue;const q=righe[k];if(q.tipo!==r.tipo||q.g1!==r.g1||(r.tipo==='sostituzione'&&q.g2!==r.g2))continue;if(q.fonte==='clip'&&q.minuto!==''&&r.minuto!==''&&Math.abs(q.minuto-r.minuto)<=2){r.doppione=k+1;break}if(q.fonte==='registrazione'&&q.tempoReg===r.tempoReg&&k<j&&r.secondo!=null&&q.secondo!=null&&Math.abs(r.secondo-q.secondo)<=60){r.doppione=k+1;break}}})}
 function voceCarica(id,inp){const f=inp.files&&inp.files[0];if(!f)return;f.text().then(t=>{let d;try{d=JSON.parse(t)}catch(_){toast('File non leggibile',true);return}voceApri(id,d,f.name,true)})}
 function voceApri(id,d,origine,apri){
 if(!d||d.formato!=='calenzano2013-eventi-voce'||!Array.isArray(d.eventi)){toast("Non e' un file di eventi dalla voce",true);return}
 const e=fE(id);if(!e)return;
-const righe=d.eventi.map(v=>({tipo:_VOCE_TIPI[v.tipo]?v.tipo:'tiro',minuto:Number.isInteger(v.minuto)&&v.minuto>0?v.minuto:'',g1:_voceGioc(v.giocatore),g2:_voceGioc(v.giocatore2),nomeG1:v.giocatore?v.giocatore.cognome:'',testo:v.testo||'',clip:v.clip||'',ora:v.ora||'',rivedere:!!v.rivedere,motivo:v.motivo||'',origine:v.origine||''}));
+const righe=d.eventi.map(v=>({tipo:_VOCE_TIPI[v.tipo]?v.tipo:'tiro',minuto:Number.isInteger(v.minuto)&&v.minuto>0?v.minuto:'',g1:_voceGioc(v.giocatore),g2:_voceGioc(v.giocatore2),nomeG1:v.giocatore?v.giocatore.cognome:'',testo:v.testo||'',clip:v.clip||'',ora:v.ora||'',fonte:v.fonte||'clip',tempoReg:v.tempo||0,secondo:v.secondo,rivedere:!!v.rivedere,motivo:v.motivo||'',origine:v.origine||''}));
 _voceSegna(e,righe);
 righe.forEach(r=>{r.sel=!r.rivedere&&!r.doppione&&!r.presente&&r.minuto!==''&&!!r.g1&&(r.tipo!=='sostituzione'||!!r.g2)});
-_voceImp={pid:id,data:d.data||'',file:origine,righe};if(apri)openPartitaDettagli(id)}
+_voceImp={pid:id,data:d.data||'',file:origine,righe,reg:Array.isArray(d.registrazioni)?d.registrazioni:[]};if(apri)openPartitaDettagli(id)}
 function voceSet(id,k,campo,val){const v=_voceImp;if(!v||v.pid!==id||!v.righe[k])return;const r=v.righe[k];
 if(campo==='minuto'){const m=parseInt(val);r.minuto=m>0?m:''}else r[campo]=val;
 /* solo spunta e tipo riaprono la scheda: minuto e giocatore no, si perderebbe il tocco sul campo dopo */
@@ -866,10 +871,12 @@ if(!v)return h+`${pcBoxHTML(e,id)}<p style="font-size:12px;color:var(--muted);ma
 const gioc=DATA.giocatori.slice().sort((a,b)=>String(a.cognome).localeCompare(String(b.cognome)));
 const gOpt=(sel,vuoto)=>`<option value="">${vuoto}</option>`+gioc.map(g=>`<option value="${g.id}"${g.id===sel?' selected':''}>${esc(g.cognome+' '+g.nome)}</option>`).join('');
 h+=`<p style="font-size:12px;color:var(--muted);margin-bottom:8px">Da <strong>${esc(v.file)}</strong>: ${v.righe.length} eventi. Le righe spuntate verranno aggiunte; correggi minuto, tipo o giocatore dove serve.</p>`;
+const _sincLab={voce:"minuti dal 'fischio d\'inizio' detto a voce",orologi:'minuti dagli orari del cronometro (stima di qualche secondo)',nessuna:'non sincronizzato: minuti da verificare'};
+if((v.reg||[]).length)h+=`<p style="font-size:12px;margin-bottom:8px">${v.reg.map(x=>'<strong>Registrazione '+x.tempo+'° tempo</strong>: '+(_sincLab[x.sincro]||x.sincro)).join('<br>')}</p>`;
 if(v.data&&v.data!==e.data)h+=`<div class="alert alert-warn">Attenzione: il file e' del ${fmtDate(v.data)}, questa partita e' del ${fmtDate(e.data)}.</div>`;
 h+=v.righe.map((r,k)=>{const note=[];if(r.rivedere)note.push('da rivedere: '+esc(r.motivo||'incerto'));if(r.doppione)note.push('doppione della riga '+r.doppione);if(r.presente)note.push("gia' presente nella partita");if(r.minuto==='')note.push('manca il minuto');if(!r.g1)note.push('giocatore non riconosciuto'+(r.nomeG1?' ('+esc(r.nomeG1)+')':''));
 const sost=r.tipo==='sostituzione';
-return `<div class="voce-riga${r.sel?' on':''}"><label class="voce-chk"><input type="checkbox"${r.sel?' checked':''} onchange="voceSet('${id}',${k},'sel',this.checked)"> ${k+1}</label><input type="number" class="form-input voce-min" min="1" max="${2*_crT(e)+15}" value="${r.minuto}" placeholder="min" onchange="voceSet('${id}',${k},'minuto',this.value)"><select class="form-select" onchange="voceSet('${id}',${k},'tipo',this.value)">${Object.entries(_VOCE_TIPI).map(([t,l])=>`<option value="${t}"${t===r.tipo?' selected':''}>${l}</option>`).join('')}</select><select class="form-select" onchange="voceSet('${id}',${k},'g1',this.value)">${gOpt(r.g1,sost?'- esce -':'- giocatore -')}</select>${sost?`<select class="form-select" onchange="voceSet('${id}',${k},'g2',this.value)">${gOpt(r.g2,'- entra -')}</select>`:''}<div class="voce-detto">"${esc(r.testo)}"${r.origine?' - '+esc(r.origine):''}${note.length?' <span class="voce-note">'+note.join(' - ')+'</span>':''}</div></div>`}).join('');
+return `<div class="voce-riga${r.sel?' on':''}"><label class="voce-chk"><input type="checkbox"${r.sel?' checked':''} onchange="voceSet('${id}',${k},'sel',this.checked)"> ${k+1}</label><input type="number" class="form-input voce-min" min="1" max="${2*_crT(e)+15}" value="${r.minuto}" placeholder="min" onchange="voceSet('${id}',${k},'minuto',this.value)"><select class="form-select" onchange="voceSet('${id}',${k},'tipo',this.value)">${Object.entries(_VOCE_TIPI).map(([t,l])=>`<option value="${t}"${t===r.tipo?' selected':''}>${l}</option>`).join('')}</select><select class="form-select" onchange="voceSet('${id}',${k},'g1',this.value)">${gOpt(r.g1,sost?'- esce -':'- giocatore -')}</select>${sost?`<select class="form-select" onchange="voceSet('${id}',${k},'g2',this.value)">${gOpt(r.g2,'- entra -')}</select>`:''}<div class="voce-detto">${r.fonte==='registrazione'?'<span class="voce-tag">registrazione '+r.tempoReg+'T</span> ':''}"${esc(r.testo)}"${r.origine?' - '+esc(r.origine):''}${note.length?' <span class="voce-note">'+note.join(' - ')+'</span>':''}</div></div>`}).join('');
 const n=v.righe.filter(r=>r.sel).length;
 return h+`<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="voce-ok" onclick="voceConferma('${id}')"${n?'':' disabled'}>Aggiungi ${n} eventi</button><button class="btn btn-secondary btn-sm" onclick="voceAnnulla('${id}')">Annulla</button></div></div>`}
 /* INVIO_PC_v1: telefono -> PC di Roberto dentro la rete privata Tailscale
@@ -886,7 +893,7 @@ function _pcMsg(id,msg,err,busy){_pcJob={pid:id,msg,err:!!err,busy:!!busy};const
 async function _pcFetch(path,opt,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||15000);
 try{const r=await fetch(_pcUrl()+path,Object.assign({signal:c.signal,cache:'no-store'},opt||{}));const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.errore||('HTTP '+r.status));return j}
 catch(err){if(err&&err.name==='AbortError')throw new Error('nessuna risposta');throw err}finally{clearTimeout(t)}}
-function pcBoxHTML(e,id){if(!(e.clip||[]).length)return'';const u=_pcUrl(),j=_pcJob&&_pcJob.pid===id?_pcJob:null;
+function pcBoxHTML(e,id){if(!(e.clip||[]).length&&!(e.registrazioni||[]).length)return'';const u=_pcUrl(),j=_pcJob&&_pcJob.pid===id?_pcJob:null;
 return `<div class="pc-box"><button class="btn btn-primary btn-sm" id="pc-btn" onclick="pcInvia('${id}')"${j&&j.busy?' disabled':''}>Invia al PC e ricava eventi</button><span id="pc-stato" class="pc-stato${j&&j.err?' err':''}">${j?esc(j.msg):''}</span><div class="pc-url">PC: ${u?esc(u.replace(/^https?:\/\//,'')):'non impostato'} - <a href="#" onclick="event.preventDefault();pcImposta('${id}')">${u?'cambia':'imposta'}</a></div></div>`}
 async function pcInvia(id){const e=fE(id);if(!e)return;if(_pcJob&&_pcJob.busy)return;
 if(!_pcUrl()){pcImposta(id);if(!_pcUrl())return}
@@ -898,16 +905,49 @@ for(let i=0;i<cl.length;i++){const c=cl[i];let r=null;try{r=await mediaGet(c.id)
 _pcMsg(id,'Invio clip '+(i+1)+' di '+cl.length+'...',false,true);
 try{await _pcFetch('/clip?pid='+encodeURIComponent(id)+'&nome='+encodeURIComponent(_clipNome(e,c)),{method:'POST',headers:{'Content-Type':r.mime||'audio/webm'},body:r.blob},60000);inviate++}
 catch(err){_pcMsg(id,'Invio interrotto: '+err.message,true,false);return}}
+const regs=e.registrazioni||[];let inviateReg=0;for(const rg of regs){let r=null;try{r=await mediaGet(rg.id)}catch(_){}if(!r||!r.blob){assenti++;continue}
+_pcMsg(id,'Invio la registrazione del '+rg.tempo+'° tempo ('+(r.blob.size/1048576).toFixed(1)+' MB)...',false,true);
+const q=_regMeta(e,rg);const qs=Object.keys(q).map(k=>k+'='+encodeURIComponent(q[k])).join('&');
+try{await _pcFetch('/audio?pid='+encodeURIComponent(id)+'&nome='+encodeURIComponent('reg_'+e.data+'_t'+rg.tempo+'.'+(rg.ext||'m4a'))+'&'+qs,{method:'POST',headers:{'Content-Type':r.mime||'application/octet-stream'},body:r.blob},600000);inviate++;inviateReg++}
+catch(err){_pcMsg(id,'Invio della registrazione interrotto: '+err.message,true,false);return}}
 if(!inviate){_pcMsg(id,assenti?"Le clip di questa partita non sono su questo dispositivo: invia dal telefono che le ha registrate":'Nessuna clip da inviare',true,false);return}
 try{await _pcFetch('/elabora?pid='+encodeURIComponent(id),{method:'POST'})}catch(err){_pcMsg(id,'Il PC non ha avviato il lavoro: '+err.message,true,false);return}
 const t0=Date.now();
-while(Date.now()-t0<300000){await new Promise(s=>setTimeout(s,2000));let j;
+while(Date.now()-t0<(regs.length?1200000:300000)){await new Promise(s=>setTimeout(s,2000));let j;
 try{j=await _pcFetch('/eventi?pid='+encodeURIComponent(id)+'&data='+encodeURIComponent(e.data||''),{},15000)}catch(err){_pcMsg(id,'Contatto col PC perso: '+err.message,true,false);return}
 if(j.stato==='pronto'&&j.doc){_pcJob=null;const bar=document.getElementById('crono-bar'),aperta=!!bar&&bar.dataset.pid===id;
-voceApri(id,j.doc,'PC, '+inviate+' clip',aperta);toast(aperta?'Eventi pronti da rivedere':'Eventi pronti: apri la partita, tab Voce');return}
+voceApri(id,j.doc,'PC, '+(inviate-inviateReg)+' clip'+(inviateReg?' e '+inviateReg+(inviateReg>1?' registrazioni':' registrazione'):''),aperta);toast(aperta?'Eventi pronti da rivedere':'Eventi pronti: apri la partita, tab Voce');return}
 if(j.stato==='errore'||j.stato==='nessuno'){_pcMsg(id,j.msg||'Errore sul PC',true,false);return}
 _pcMsg(id,(j.msg||'Il PC sta lavorando')+'...',false,true)}
 _pcMsg(id,'Il PC ci sta mettendo troppo: riprova tra poco',true,false)}
+/* REGISTRAZIONI_v1: un file per tempo dal registratore del secondo allenatore.
+   Audio solo in IndexedDB (kind 'registrazione'); in e.registrazioni solo i riferimenti. */
+const _REG_EXT=['m4a','mp3','aac','wav','ogg','oga','opus','webm','weba','amr','3gp','flac'];
+function _regExt(f){const m=String(f.name||'').toLowerCase().match(/\.([a-z0-9]+)$/);let x=m?m[1]:'';
+if(!_REG_EXT.includes(x)){const t=String(f.type||'');x=/mp4|m4a|aac/.test(t)?'m4a':/mpeg|mp3/.test(t)?'mp3':/ogg/.test(t)?'ogg':/webm/.test(t)?'webm':/wav/.test(t)?'wav':/amr/.test(t)?'amr':''}return x}
+function _durataAudio(blob){return new Promise(res=>{let fatto=false;const fine=v=>{if(fatto)return;fatto=true;URL.revokeObjectURL(u);res(v)};
+const a=document.createElement('audio'),u=URL.createObjectURL(blob);a.preload='metadata';a.onloadedmetadata=()=>fine(isFinite(a.duration)?Math.round(a.duration*1000):0);a.onerror=()=>fine(0);setTimeout(()=>fine(0),10000);a.src=u})}
+/* ora di inizio del file: data e ora nel nome (molti registratori le scrivono), se no ultima modifica - durata */
+function _regInizio(f,durMs){const m=String(f.name||'').match(/(20\d\d)[-_.]?(\d\d)[-_.]?(\d\d)[ _T.-]?(\d\d)[.:_-]?(\d\d)[.:_-]?(\d\d)/);
+if(m){const d=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]).getTime();if(!isNaN(d))return{ms:d,da:'nome del file'}}
+return f.lastModified&&durMs?{ms:f.lastModified-durMs,da:'ultima modifica'}:{ms:0,da:''}}
+async function regImporta(id,tempo,inp){const f=inp.files&&inp.files[0];if(!f)return;const e=fE(id);if(!e)return;
+const ext=_regExt(f);if(!ext){toast('Formato audio non riconosciuto: '+f.name,true);return}
+toast('Importo la registrazione del '+tempo+'° tempo...');
+const durMs=await _durataAudio(f),ini=_regInizio(f,durMs),rid='reg_'+uid();
+try{await mediaPut({id:rid,kind:'registrazione',partita:id,blob:f,mime:f.type||'',nome:f.name,tempo,ext,durMs,inizio:ini.ms,inizioDa:ini.da,ts:Date.now()})}catch(err){toast('Registrazione NON salvata: '+(err&&err.message||err),true);return}
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+const vecchie=(e.registrazioni||[]).filter(r=>r.tempo===tempo);for(const r of vecchie){try{await mediaDel(r.id)}catch(_){}}
+e.registrazioni=(e.registrazioni||[]).filter(r=>r.tempo!==tempo).concat([{id:rid,tempo,nome:f.name,ext,byte:f.size,durMs,inizio:ini.ms,inizioDa:ini.da}]).sort((a,b)=>a.tempo-b.tempo);
+saveData();openPartitaDettagli(id);toast('Registrazione del '+tempo+'° tempo importata'+(durMs?' ('+_mmss(durMs)+')':''))}
+async function regElimina(id,rid){if(!confirm('Eliminare questa registrazione da questo dispositivo?'))return;const e=fE(id);e.registrazioni=(e.registrazioni||[]).filter(r=>r.id!==rid);saveData();try{await mediaDel(rid)}catch(_){}openPartitaDettagli(id)}
+function regTabHTML(e,id){const regs=e.registrazioni||[];
+const riga=t=>{const r=regs.find(x=>x.tempo===t);return r?`<div class="convoca-row" id="cr-${r.id}"><span style="font-weight:700;min-width:46px">${t}° T</span><span class="name">${esc(r.nome)} - ${r.durMs?_mmss(r.durMs):'durata ?'} - ${(r.byte/1048576).toFixed(1)} MB</span><button class="btn btn-sm btn-secondary" onclick="clipPlay('${r.id}')">Ascolta</button><button class="btn btn-sm btn-danger" onclick="regElimina('${id}','${r.id}')">X</button></div>`
+:`<div class="convoca-row"><span style="font-weight:700;min-width:46px">${t}° T</span><span class="name" style="color:var(--muted)">nessuna registrazione</span><label class="btn btn-sm btn-secondary">Importa ${t}° tempo<input type="file" accept="audio/*,.m4a,.mp3,.aac,.amr,.3gp,.wav,.ogg,.opus,.flac" style="display:none" onchange="regImporta('${id}',${t},this)"></label></div>`};
+return `<div class="reg-box"><h5 style="margin:16px 0 6px">Registrazioni del secondo allenatore</h5><p style="font-size:12px;color:var(--muted);margin-bottom:8px">Un file per tempo, dal registratore del suo telefono, ricevuto con Quick Share. Appena l'arbitro fischia deve dire ad alta voce <strong>"fischio d'inizio"</strong>: da li' si calcolano i minuti. Il file resta solo su questo dispositivo.</p>${riga(1)}${riga(2)}</div>`}
+/* i dati per sincronizzare la registrazione col cronometro */
+function _regMeta(e,r){const c=e.crono||{},fischio=r.tempo===1?c.t1:c.t2;const q={tempo:r.tempo,tmin:_crT(e)};
+if(fischio)q.fischio=fischio;if(r.inizio&&(!fischio||Math.abs(r.inizio-fischio)<15*60000))q.inizio=r.inizio;return q}
 function openPartitaDettagli(id){const e=fE(id);if(!e)return;
 /* FORMAZIONE_BLOCCO_v1: la scheda si riapre a ogni click sulla lavagna e a ogni
    modifica. Senza questo, i modali si impilano: gli id dei tab si duplicano e
@@ -929,7 +969,7 @@ ${eventi.length?eventi.sort((a,b)=>(a.minuto||0)-(b.minuto||0)).map((ev,i)=>{con
 ${sostituzioni.map((s,i)=>{const gI=fG(s.in),gO=fG(s.out);return `<div class="convoca-row"><span style="font-weight:700;min-width:40px">${s.minuto||'-'}'</span><span style="color:var(--r2)">OUT: ${gO?pLink(gO):'-'}</span><span style="color:var(--ok)">IN: ${gI?pLink(gI):'-'}</span><button class="btn btn-sm btn-danger" onclick="rmSub('${id}',${i})">X</button></div>`}).join('')}
 <div style="margin-top:14px;padding:14px;background:var(--b4);border-radius:8px"><h5 style="margin-bottom:10px">+ Aggiungi sostituzione (max 7)</h5><div class="form-row-4"><select class="form-select" id="sub-out"><option value="">Esce...</option>${formazione.map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><select class="form-select" id="sub-in"><option value="">Entra...</option>${panchina.map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><input type="number" class="form-input" id="sub-min" placeholder="${cronoMinuto(e)?'Auto':'Min'}" min="1" max="${e.durata||70}"><button class="btn btn-primary btn-sm" onclick="addSub('${id}')">+</button></div></div>
 </div>
-<div id="tab-voce" class="tab-pane" style="display:none">${clipTabHTML(e,id)}${voceImportHTML(e,id)}</div>
+<div id="tab-voce" class="tab-pane" style="display:none">${clipTabHTML(e,id)}${regTabHTML(e,id)}${voceImportHTML(e,id)}</div>
 <div id="tab-info" class="tab-pane" style="display:none">
 <div style="background:var(--b4);padding:14px;border-radius:8px;margin-bottom:14px">
 <p><strong>Data:</strong> ${fmtDateLong(e.data)} - <strong>Ora:</strong> ${e.ora||'-'}</p>
