@@ -298,7 +298,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01j - ruoli e numeri, rosa al PC</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01k - esito di revisione e referto al PC</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -887,6 +887,7 @@ const e=fE(id);if(!e)return;
 const righe=d.eventi.map(v=>({tipo:_VOCE_TIPI[v.tipo]?v.tipo:'tiro',minuto:Number.isInteger(v.minuto)&&v.minuto>0?v.minuto:'',g1:_voceGioc(v.giocatore),g2:_voceGioc(v.giocatore2),nomeG1:v.giocatore?v.giocatore.cognome:'',testo:v.testo||'',clip:v.clip||'',ora:v.ora||'',fonte:v.fonte||'clip',tempoReg:v.tempo||0,secondo:v.secondo,rivedere:!!v.rivedere,motivo:v.motivo||'',origine:v.origine||''}));
 _voceSegna(e,righe);
 righe.forEach(r=>{r.sel=!r.rivedere&&!r.doppione&&!r.presente&&r.minuto!==''&&!!r.g1&&(r.tipo!=='sostituzione'||!!r.g2)});
+righe.forEach(r=>{r.o={tipo:r.tipo,minuto:r.minuto,g1:r.g1,g2:r.g2,sel:r.sel}});
 _voceImp={pid:id,data:d.data||'',file:origine,righe,reg:Array.isArray(d.registrazioni)?d.registrazioni:[]};if(apri)openPartitaDettagli(id)}
 function voceSet(id,k,campo,val){const v=_voceImp;if(!v||v.pid!==id||!v.righe[k])return;const r=v.righe[k];
 if(campo==='minuto'){const m=parseInt(val);r.minuto=m>0?m:''}else r[campo]=val;
@@ -902,7 +903,7 @@ let n=0,oltre=0;
 sel.forEach(r=>{const base={minuto:r.minuto,fonte:'voce'};const cid=clipId(r.clip);if(cid)base.clipId=cid;
 if(r.tipo==='sostituzione'){if(e.sostituzioni.length>=7){oltre++;return}e.sostituzioni.push(Object.assign({out:r.g1,in:r.g2},base))}
 else e.eventiPartita.push(Object.assign({tipo:r.tipo,giocatoreId:r.g1},base));n++});
-_voceImp=null;saveData();openPartitaDettagli(id);toast('Aggiunti '+n+' eventi alla partita'+(oltre?' - '+oltre+' sostituzioni oltre le 7 non aggiunte':''),!!oltre)}
+pcEsito(id,'revisione',v);_voceImp=null;saveData();openPartitaDettagli(id);toast('Aggiunti '+n+' eventi alla partita'+(oltre?' - '+oltre+' sostituzioni oltre le 7 non aggiunte':''),!!oltre)}
 function voceImportHTML(e,id){const v=_voceImp&&_voceImp.pid===id?_voceImp:null;
 let h='<div class="voce-imp"><h5 style="margin:18px 0 8px">Eventi ricavati dalla voce</h5>';
 if(!v)return h+`${pcBoxHTML(e,id)}<p style="font-size:12px;color:var(--muted);margin-bottom:8px">In alternativa carica a mano il file <strong>eventi_voce_&lt;data&gt;.json</strong> preparato sul PC. In ogni caso niente entra senza la tua conferma.</p><label class="btn btn-secondary btn-sm">Carica file eventi<input type="file" accept=".json,application/json" style="display:none" onchange="voceCarica('${id}',this)"></label></div>`;
@@ -1023,10 +1024,10 @@ async function refElimina(id,fid){if(!confirm('Eliminare questo file del referto
 function refRiga(id){const e=fE(id);if(!e)return;_refD(e).righe.push({tipo:'gol',minuto:'',g1:'',g2:''});saveData();openPartitaDettagli(id)}
 function refTogli(id,k){const e=fE(id);if(!e||!e.referto)return;e.referto.righe.splice(k,1);saveData();openPartitaDettagli(id)}
 function refSet(id,k,campo,val){const e=fE(id);if(!e)return;const R=_refD(e);
-if(campo==='noi'||campo==='loro'){const n=parseInt(val);R.ris[campo]=n>=0?n:'';saveData();_refConf(id);return}
+if(campo==='noi'||campo==='loro'){const n=parseInt(val);R.ris[campo]=n>=0?n:'';saveData();pcEsito(id,'referto');_refConf(id);return}
 const r=R.righe[k];if(!r)return;if(campo==='minuto'){const m=parseInt(val);r.minuto=m>0?m:''}else r[campo]=val;if(campo==='tipo'&&val!=='sostituzione')r.g2='';
 /* solo il tipo riapre la scheda (cambia la riga): minuto e giocatore aggiornano il confronto e basta */
-saveData();if(campo==='tipo')openPartitaDettagli(id);else _refConf(id)}
+saveData();pcEsito(id,'referto');if(campo==='tipo')openPartitaDettagli(id);else _refConf(id)}
 function refDaApp(id){const e=fE(id);if(!e)return;const R=_refD(e);if(R.righe.length&&!confirm("Le righe gia' scritte verranno sostituite. Continuo?"))return;
 R.righe=_refApp(e).map(a=>({tipo:a.tipo,minuto:a.minuto,g1:a.g1,g2:a.g2||''}));saveData();openPartitaDettagli(id);toast('Ora correggi le righe guardando il referto')}
 function _refConf(id){const c=document.getElementById('ref-conf'),e=fE(id);if(c&&e)c.innerHTML=refConfrontoHTML(e,id)}
@@ -1067,19 +1068,19 @@ const s=e.sostituzioni[a.i];if(!s)return false;if(c.diff.gioc){if(r.g1){s.out=r.
 function _refAggiungiUno(e,c){const r=c.r;if(!r.g1||r.minuto===''||(r.tipo==='sostituzione'&&!r.g2))return 'incompleta';
 if(r.tipo==='sostituzione'){if(!e.sostituzioni)e.sostituzioni=[];if(e.sostituzioni.length>=7)return 'oltre7';e.sostituzioni.push({out:r.g1,in:r.g2,minuto:r.minuto,fonte:'referto'})}
 else{if(!e.eventiPartita)e.eventiPartita=[];e.eventiPartita.push({tipo:r.tipo,giocatoreId:r.g1,minuto:r.minuto,fonte:'referto'})}return 'ok'}
-function refAllinea(id,j){const [e,c]=_refC(id,j,'diff');if(!c)return;if(_refAllineaUno(e,c)){saveData();openPartitaDettagli(id);toast('Evento corretto come sul referto')}}
+function refAllinea(id,j){const [e,c]=_refC(id,j,'diff');if(!c)return;if(_refAllineaUno(e,c)){saveData();pcEsito(id,'referto');openPartitaDettagli(id);toast('Evento corretto come sul referto')}}
 function refAggiungiEv(id,j){const [e,c]=_refC(id,j,'soloRef');if(!c)return;const k=_refAggiungiUno(e,c);
 if(k==='incompleta'){toast('Nella riga del referto manca il minuto o il giocatore',true);return}if(k==='oltre7'){toast("Ci sono gia' 7 sostituzioni",true);return}
-saveData();openPartitaDettagli(id);toast('Aggiunto alla partita')}
+saveData();pcEsito(id,'referto');openPartitaDettagli(id);toast('Aggiunto alla partita')}
 function refTogliEv(id,j){const [e,c]=_refC(id,j,'soloApp');if(!c)return;const a=c.a;
 if(!confirm('Togliere dalla partita: '+(_REF_TIPI[a.tipo]||a.tipo)+(a.minuto!==''?' al '+a.minuto+"'":'')+'?'))return;
-if(a.k==='ev')e.eventiPartita.splice(a.i,1);else e.sostituzioni.splice(a.i,1);saveData();openPartitaDettagli(id);toast('Tolto dalla partita')}
+if(a.k==='ev')e.eventiPartita.splice(a.i,1);else e.sostituzioni.splice(a.i,1);saveData();pcEsito(id,'referto');openPartitaDettagli(id);toast('Tolto dalla partita')}
 function refTutti(id){const e=fE(id);if(!e)return;const C=_refConfronto(e),D=C.filter(c=>c.st==='diff'),S=C.filter(c=>c.st==='soloRef');
 if(!confirm('Correggo '+D.length+' eventi e ne aggiungo '+S.length+' come sul referto. Quelli che non sono sul referto restano: li togli tu, uno per uno. Procedo?'))return;
 let c1=0,c2=0,sk=0;D.forEach(c=>{if(_refAllineaUno(e,c))c1++});S.forEach(c=>{if(_refAggiungiUno(e,c)==='ok')c2++;else sk++});
-saveData();openPartitaDettagli(id);toast('Corretti '+c1+', aggiunti '+c2+(sk?' - '+sk+' righe incomplete o oltre le 7 sostituzioni':''),!!sk)}
+saveData();pcEsito(id,'referto');openPartitaDettagli(id);toast('Corretti '+c1+', aggiunti '+c2+(sk?' - '+sk+' righe incomplete o oltre le 7 sostituzioni':''),!!sk)}
 function refRisUsa(id){const e=fE(id);if(!e)return;const {noi,loro}=_refR(e).ris;if(noi===''||loro==='')return;
-if(e.casaTrasferta==='trasferta'){e.golTrasferta=noi;e.golCasa=loro}else{e.golCasa=noi;e.golTrasferta=loro}e.completato=true;saveData();openPartitaDettagli(id);toast('Risultato in Info partita: '+noi+' - '+loro)}
+if(e.casaTrasferta==='trasferta'){e.golTrasferta=noi;e.golCasa=loro}else{e.golCasa=noi;e.golTrasferta=loro}e.completato=true;saveData();pcEsito(id,'referto');openPartitaDettagli(id);toast('Risultato in Info partita: '+noi+' - '+loro)}
 function refTabHTML(e,id){const R=_refR(e);if(R.file.length)setTimeout(()=>_refPrecarica(id),0);
 const gioc=DATA.giocatori.slice().sort((a,b)=>String(a.cognome).localeCompare(String(b.cognome)));
 const gOpt=(sel,vuoto)=>`<option value="">${vuoto}</option>`+gioc.map(g=>`<option value="${g.id}"${g.id===sel?' selected':''}>${esc((g.numero?g.numero+' - ':'')+g.cognome+' '+g.nome)}</option>`).join('');
@@ -1113,6 +1114,25 @@ const G=DATA.giocatori.map(g=>({numero:parseInt(g.numero)||null,nome:String(g.no
 try{const j=await _pcFetch('/rosa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({giocatori:G})},15000);
 if(avvisa)toast(j.cambiata?'Rosa aggiornata anche sul PC':"Il PC aveva gia' questa rosa");return true}
 catch(err){if(avvisa)toast('Rosa non arrivata al PC ('+err.message+'): partira\' con il prossimo invio delle clip',true);return false}}
+/* ESITO_AL_PC_v1: proposta del PC e scelta finale (revisione, referto) vanno al PC
+   dentro Tailscale, per tarare le soglie della voce (taratura.py). Solo cognomi. */
+let _esitoT=null,_esitoRev=null;
+function _gCog(gid){const g=gid?fG(gid):null;return g?String(g.cognome||''):''}
+function pcEsito(id,motivo,v){if(!_pcUrl())return;
+if(v)_esitoRev={pid:id,file:v.file,data:v.data,righe:v.righe.map(r=>({
+ o:r.o?{tipo:r.o.tipo,minuto:r.o.minuto,g1:_gCog(r.o.g1),g2:_gCog(r.o.g2),sel:!!r.o.sel}:null,
+ f:{tipo:r.tipo,minuto:r.minuto,g1:_gCog(r.g1),g2:_gCog(r.g2),sel:!!r.sel},
+ testo:r.testo,clip:r.clip,ora:r.ora,fonte:r.fonte,tempo:r.tempoReg,secondo:r.secondo,
+ rivedere:!!r.rivedere,motivo:r.motivo,doppione:r.doppione||0,presente:!!r.presente}))};
+clearTimeout(_esitoT);_esitoT=setTimeout(()=>_pcEsitoInvia(id,motivo),2500)}
+async function _pcEsitoInvia(id,motivo){const e=fE(id);if(!e)return;const rev=_esitoRev&&_esitoRev.pid===id?_esitoRev:null,R=_refR(e);
+const doc={formato:'calenzano2013-esito',versione:1,data:e.data,avversario:e.avversario||'',motivo,creato:new Date().toISOString(),revisione:rev,
+ partita:{eventi:(e.eventiPartita||[]).map(x=>({tipo:x.tipo,minuto:x.minuto||'',g:_gCog(x.giocatoreId),fonte:x.fonte||''})),
+  sostituzioni:(e.sostituzioni||[]).map(s=>({minuto:s.minuto||'',out:_gCog(s.out),in:_gCog(s.in),fonte:s.fonte||''})),
+  ris:_refRisInfo(e),completato:!!e.completato},
+ referto:{ris:R.ris,righe:R.righe.map(r=>({tipo:r.tipo,minuto:r.minuto,g1:_gCog(r.g1),g2:_gCog(r.g2)})),file:R.file.length}};
+try{await _pcFetch('/esito?pid='+encodeURIComponent(id)+'&motivo='+motivo,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)},15000);if(rev&&_esitoRev===rev)_esitoRev=null}
+catch(_){/* PC spento o Tailscale fermo: la revisione resta in attesa e riparte col prossimo invio */}}
 function openPartitaDettagli(id){const e=fE(id);if(!e)return;
 /* FORMAZIONE_BLOCCO_v1: la scheda si riapre a ogni click sulla lavagna e a ogni
    modifica. Senza questo, i modali si impilano: gli id dei tab si duplicano e
