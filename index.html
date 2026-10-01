@@ -236,6 +236,33 @@ tr.clickable{cursor:pointer}
 /* REGISTRAZIONI_v1 */
 .reg-box{margin-top:6px}
 .reg-box .convoca-row .name{flex:1;min-width:0;overflow-wrap:anywhere}
+/* REFERTO_v1 */
+.ref-h{margin:16px 0 8px}
+.ref-files{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.ref-file{position:relative;width:110px;height:140px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#f3f4f6}
+.ref-thumb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ref-thumb img{width:100%;height:100%;object-fit:cover}
+.ref-del{position:absolute;top:4px;right:4px;padding:2px 8px}
+.ref-pdf{font-weight:800;color:#c62828;font-size:20px}
+.ref-miss{font-size:11px;color:var(--muted);padding:6px;text-align:center}
+.ref-ris{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-weight:600}
+.ref-ris .form-input{width:64px;padding:5px 6px}
+.ref-help{font-size:12px;color:var(--muted);margin-top:6px}
+.ref-sum{font-size:13px;margin-bottom:8px}
+.ref-c{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 9px;border-radius:8px;margin-bottom:5px;font-size:13px;border-left:4px solid #9ca3af;background:#f9fafb}
+.ref-c .name{flex:1;min-width:120px}
+.ref-c.ok{border-left-color:var(--ok)}
+.ref-c.diff{border-left-color:var(--warn);background:#fffbeb}
+.ref-c.soloRef{border-left-color:var(--r2);background:#fef2f2}
+.ref-c.soloApp{border-left-color:#7c3aed;background:#f5f3ff}
+.ref-m{font-weight:700;min-width:36px}
+.ref-st{flex-basis:100%;font-size:12px;color:var(--muted)}
+#ref-viewer{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.92);display:flex;flex-direction:column}
+#ref-viewer .ref-vbar{display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:13px;padding:10px 12px}
+#ref-viewer .ref-x{background:#fff;color:#0d2b5c;border-radius:18px;padding:8px 16px;font-weight:700}
+#ref-viewer .ref-sc{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+#ref-viewer img{display:block;width:100%;height:auto}
+#ref-viewer img.zoom{width:250%;max-width:none}
 </style>
 </head>
 <body>
@@ -265,7 +292,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01h - scheda partita leggibile sul telefono</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01i - referto e confronto con la partita</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -953,6 +980,110 @@ return `<div class="reg-box"><h5 style="margin:16px 0 6px">Registrazioni del sec
 /* i dati per sincronizzare la registrazione col cronometro */
 function _regMeta(e,r){const c=e.crono||{},fischio=r.tempo===1?c.t1:c.t2;const q={tempo:r.tempo,tmin:_crT(e)};
 if(fischio)q.fischio=fischio;if(r.inizio&&(!fischio||Math.abs(r.inizio-fischio)<15*60000))q.inizio=r.inizio;return q}
+/* REFERTO_v1: foto e PDF del referto SOLO in IndexedDB di questo dispositivo
+   (store media, kind 'referto'): ci sono i nomi dei ragazzi. In DATA, quindi nella
+   sincronia, va solo e.referto={file:[{id,mime,nome,ts}],ris:{noi,loro},righe:[{tipo,minuto,g1,g2}]}.
+   Le righe le riporta Roberto guardando la foto; il confronto con gli eventi della
+   partita mostra le differenze e ogni correzione parte solo da un suo tocco. */
+const _REF_TIPI={gol:'Gol',rigore:'Rigore',autogol:'Autogol',giallo:'Giallo',rosso:'Rosso',sostituzione:'Sostituzione'};
+const _REF_CONF=['gol','rigore','autogol','giallo','rosso'];
+function _refR(e){const r=e.referto||{};return {file:r.file||[],ris:r.ris||{noi:'',loro:''},righe:r.righe||[]}}
+function _refD(e){e.referto=_refR(e);return e.referto}
+function _refGN(gid){const g=gid?fG(gid):null;return g?esc((g.numero?g.numero+' ':'')+g.cognome):'?'}
+function _refRisInfo(e){const tr=e.casaTrasferta==='trasferta';return [tr?(e.golTrasferta||0):(e.golCasa||0),tr?(e.golCasa||0):(e.golTrasferta||0)]}
+async function _refImg(f){try{if(!/^image\//.test(f.type)||!window.createImageBitmap)return f;const b=await createImageBitmap(f),k=Math.min(1,2400/Math.max(b.width,b.height));
+if(k===1&&f.size<1500000){if(b.close)b.close();return f}
+const c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);c.getContext('2d').drawImage(b,0,0,c.width,c.height);if(b.close)b.close();
+const out=await new Promise(res=>c.toBlob(res,'image/jpeg',.85));return out&&out.size<f.size?out:f}catch(_){return f}}
+async function refAggiungi(id,inp){const fl=[...(inp.files||[])];inp.value='';const e=fE(id);if(!e||!fl.length)return;const R=_refD(e);let n=0;
+for(const f of fl){const pdf=/pdf$/i.test(f.type)||/\.pdf$/i.test(f.name);if(!pdf&&!/^image\//.test(f.type)){toast(f.name+": non e' una foto ne' un PDF",true);continue}
+const blob=pdf?f:await _refImg(f),fid='ref_'+uid(),mime=blob.type||(pdf?'application/pdf':'image/jpeg'),ts=Date.now();
+try{await mediaPut({id:fid,kind:'referto',partita:id,blob,mime,nome:f.name,ts})}catch(err){toast('File NON salvato: '+(err&&err.message||err),true);continue}
+R.file.push({id:fid,mime,nome:f.name,ts});n++}
+if(!n)return;if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+saveData();openPartitaDettagli(id);toast(n===1?'Referto salvato su questo dispositivo':n+' file del referto salvati su questo dispositivo')}
+let _refUrls=[];
+async function _refPrecarica(id){_refUrls.forEach(u=>URL.revokeObjectURL(u));_refUrls=[];const e=fE(id);if(!e)return;
+for(const f of _refR(e).file){const el=document.getElementById('rf-'+f.id);if(!el)continue;let r=null;try{r=await mediaGet(f.id)}catch(_){}
+if(!r||!r.blob){el.innerHTML='<span class="ref-miss">File su un altro dispositivo</span>';continue}
+const u=URL.createObjectURL(r.blob);_refUrls.push(u);el.dataset.url=u;el.dataset.nome=f.nome||'referto';
+el.innerHTML=/^image\//.test(r.mime||r.blob.type)?`<img src="${u}" alt="Referto">`:'<span class="ref-pdf">PDF</span>'}}
+function refApri(fid){const el=document.getElementById('rf-'+fid),u=el&&el.dataset.url;if(!u){toast('File non presente su questo dispositivo',true);return}
+if(!el.querySelector('img')){const a=document.createElement('a');a.href=u;a.download=el.dataset.nome;document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),1000);return}
+let v=document.getElementById('ref-viewer');if(v)v.remove();v=document.createElement('div');v.id='ref-viewer';
+v.innerHTML=`<div class="ref-vbar"><span>Tocca la foto per ingrandire</span><button class="ref-x" onclick="document.getElementById('ref-viewer').remove()">Chiudi</button></div><div class="ref-sc"><img src="${u}" alt="Referto" onclick="this.classList.toggle('zoom')"></div>`;document.body.appendChild(v)}
+async function refElimina(id,fid){if(!confirm('Eliminare questo file del referto?'))return;const e=fE(id);if(!e||!e.referto)return;e.referto.file=_refR(e).file.filter(f=>f.id!==fid);saveData();try{await mediaDel(fid)}catch(_){}openPartitaDettagli(id)}
+function refRiga(id){const e=fE(id);if(!e)return;_refD(e).righe.push({tipo:'gol',minuto:'',g1:'',g2:''});saveData();openPartitaDettagli(id)}
+function refTogli(id,k){const e=fE(id);if(!e||!e.referto)return;e.referto.righe.splice(k,1);saveData();openPartitaDettagli(id)}
+function refSet(id,k,campo,val){const e=fE(id);if(!e)return;const R=_refD(e);
+if(campo==='noi'||campo==='loro'){const n=parseInt(val);R.ris[campo]=n>=0?n:'';saveData();_refConf(id);return}
+const r=R.righe[k];if(!r)return;if(campo==='minuto'){const m=parseInt(val);r.minuto=m>0?m:''}else r[campo]=val;if(campo==='tipo'&&val!=='sostituzione')r.g2='';
+/* solo il tipo riapre la scheda (cambia la riga): minuto e giocatore aggiornano il confronto e basta */
+saveData();if(campo==='tipo')openPartitaDettagli(id);else _refConf(id)}
+function refDaApp(id){const e=fE(id);if(!e)return;const R=_refD(e);if(R.righe.length&&!confirm("Le righe gia' scritte verranno sostituite. Continuo?"))return;
+R.righe=_refApp(e).map(a=>({tipo:a.tipo,minuto:a.minuto,g1:a.g1,g2:a.g2||''}));saveData();openPartitaDettagli(id);toast('Ora correggi le righe guardando il referto')}
+function _refConf(id){const c=document.getElementById('ref-conf'),e=fE(id);if(c&&e)c.innerHTML=refConfrontoHTML(e,id)}
+function _refApp(e){const A=[];(e.eventiPartita||[]).forEach((x,i)=>{if(_REF_CONF.includes(x.tipo))A.push({tipo:x.tipo,minuto:x.minuto>0?x.minuto:'',g1:x.giocatoreId||'',fonte:x.fonte||'',k:'ev',i})});
+(e.sostituzioni||[]).forEach((s,i)=>A.push({tipo:'sostituzione',minuto:s.minuto>0?s.minuto:'',g1:s.out||'',g2:s.in||'',fonte:s.fonte||'',k:'sub',i}));return A}
+/* abbinamento: 1) stesso tipo e giocatore a +-2 minuti; 2) stesso tipo e giocatore, minuto diverso;
+   3) stesso tipo a +-2 minuti, giocatore diverso. Gol e rigore sono lo stesso gruppo (rete). */
+function _refConfronto(e){const R=_refR(e).righe.filter(r=>r.g1||r.minuto!==''),A=_refApp(e),gr=t=>t==='rigore'?'gol':t;
+const dm=(r,a)=>r.minuto===''||a.minuto===''?99:Math.abs(r.minuto-a.minuto),stessi=(r,a)=>!!r.g1&&r.g1===a.g1&&(r.tipo!=='sostituzione'||r.g2===a.g2);
+const usA=new Set(),usR=new Set(),out=[];
+const passo=crit=>R.forEach((r,ri)=>{if(usR.has(ri))return;let best=-1,bd=1e9;A.forEach((a,j)=>{if(usA.has(j)||gr(a.tipo)!==gr(r.tipo)||!crit(r,a))return;const d=dm(r,a);if(d<bd){bd=d;best=j}});if(best<0)return;usA.add(best);usR.add(ri);
+const a=A[best],diff={tipo:a.tipo!==r.tipo,gioc:!stessi(r,a),min:r.minuto!==''&&dm(r,a)>2};out.push({st:diff.tipo||diff.gioc||diff.min?'diff':'ok',r,a,diff})});
+passo((r,a)=>stessi(r,a)&&dm(r,a)<=2);passo(stessi);passo((r,a)=>dm(r,a)<=2);
+R.forEach((r,ri)=>{if(!usR.has(ri))out.push({st:'soloRef',r})});A.forEach((a,j)=>{if(!usA.has(j))out.push({st:'soloApp',a})});
+return out.sort((x,y)=>((x.r||x.a).minuto||999)-((y.r||y.a).minuto||999))}
+function refConfrontoHTML(e,id){const R=_refR(e);if(!R.righe.length&&R.ris.noi==='')return '<div class="empty-state">Riporta risultato e righe del referto: qui compariranno le differenze con la partita.</div>';
+const C=_refConfronto(e),tl=t=>_REF_TIPI[t]||t,n={ok:0,diff:0,soloRef:0,soloApp:0};C.forEach(c=>n[c.st]++);
+let h='';const ris=R.ris;
+if(ris.noi!==''&&ris.loro!==''){const [m,o]=_refRisInfo(e),evG=(e.eventiPartita||[]).filter(x=>x.tipo==='gol'||x.tipo==='rigore').length,note=[],infoDiv=!e.completato||m!==ris.noi||o!==ris.loro;
+if(!e.completato)note.push("in Info partita il risultato non c'e' ancora");else if(infoDiv)note.push(`in Info partita c'e' <strong>${m} - ${o}</strong>`);
+if(evG!==ris.noi)note.push(`gol nostri fra gli eventi: <strong>${evG}</strong>`);
+h+=`<div class="ref-c ${note.length?'diff':'ok'}"><span class="ref-m">Ris.</span><span class="name">Referto <strong>${ris.noi} - ${ris.loro}</strong></span>${infoDiv?`<button class="btn btn-sm btn-primary" onclick="refRisUsa('${id}')">Usa questo risultato</button>`:''}<span class="ref-st">${note.length?note.join(' - '):'uguale a Info partita e ai gol fra gli eventi'}</span></div>`}
+const diffs=n.diff+n.soloRef+n.soloApp;
+h=`<div class="ref-sum">${diffs?`<strong>${diffs} ${diffs===1?'differenza':'differenze'}</strong>`:'<strong>Tutto torna con il referto</strong>'} - uguali ${n.ok}, diversi ${n.diff}, mancano nella partita ${n.soloRef}, non sul referto ${n.soloApp}</div>`+h;
+h+=C.map((c,j)=>{const x=c.r||c.a,sost=x.tipo==='sostituzione',chi=y=>sost?_refGN(y.g1)+' &rarr; '+_refGN(y.g2):_refGN(y.g1);let st='',btn='';
+if(c.st==='ok')st='uguale'+(c.r.minuto!==''&&c.a.minuto!==''&&c.r.minuto!==c.a.minuto?` (nella partita al ${c.a.minuto}')`:'');
+else if(c.st==='diff'){const d=[];if(c.diff.min)d.push('minuto nella partita: '+(c.a.minuto!==''?c.a.minuto+"'":'non indicato'));if(c.diff.tipo)d.push('nella partita: '+tl(c.a.tipo));if(c.diff.gioc)d.push(c.r.g1?'giocatore nella partita: '+chi(c.a):'nella riga del referto manca il giocatore (nella partita: '+chi(c.a)+')');st=d.join(' - ');
+if(c.diff.min||c.diff.tipo||(c.diff.gioc&&c.r.g1))btn=`<button class="btn btn-sm btn-primary" onclick="refAllinea('${id}',${j})">Correggi come il referto</button>`}
+else if(c.st==='soloRef'){st='manca nella partita';btn=`<button class="btn btn-sm btn-primary" onclick="refAggiungiEv('${id}',${j})">Aggiungi alla partita</button>`}
+else{st='non sul referto'+(c.a.fonte?' (da '+esc(c.a.fonte)+')':' (inserito a mano)');btn=`<button class="btn btn-sm btn-danger" onclick="refTogliEv('${id}',${j})">Togli dalla partita</button>`}
+return `<div class="ref-c ${c.st}"><span class="ref-m">${x.minuto!==''?x.minuto+"'":'-'}</span><span class="badge badge-muted">${tl(x.tipo)}</span><span class="name">${chi(x)}</span>${btn}<span class="ref-st">${st}</span></div>`}).join('');
+if(n.diff+n.soloRef)h+=`<div style="margin-top:8px"><button class="btn btn-sm btn-secondary" onclick="refTutti('${id}')">Correggi e aggiungi tutto come il referto</button></div>`;
+return h}
+function _refC(id,j,st){const e=fE(id);if(!e)return[];const c=_refConfronto(e)[j];return c&&c.st===st?[e,c]:[]}
+function _refAllineaUno(e,c){const r=c.r,a=c.a;let ch=false;
+if(a.k==='ev'){const x=e.eventiPartita[a.i];if(!x)return false;if(c.diff.tipo){x.tipo=r.tipo;ch=true}if(c.diff.gioc&&r.g1){x.giocatoreId=r.g1;ch=true}if(c.diff.min){x.minuto=r.minuto;ch=true}return ch}
+const s=e.sostituzioni[a.i];if(!s)return false;if(c.diff.gioc){if(r.g1){s.out=r.g1;ch=true}if(r.g2){s.in=r.g2;ch=true}}if(c.diff.min){s.minuto=r.minuto;ch=true}return ch}
+function _refAggiungiUno(e,c){const r=c.r;if(!r.g1||r.minuto===''||(r.tipo==='sostituzione'&&!r.g2))return 'incompleta';
+if(r.tipo==='sostituzione'){if(!e.sostituzioni)e.sostituzioni=[];if(e.sostituzioni.length>=7)return 'oltre7';e.sostituzioni.push({out:r.g1,in:r.g2,minuto:r.minuto,fonte:'referto'})}
+else{if(!e.eventiPartita)e.eventiPartita=[];e.eventiPartita.push({tipo:r.tipo,giocatoreId:r.g1,minuto:r.minuto,fonte:'referto'})}return 'ok'}
+function refAllinea(id,j){const [e,c]=_refC(id,j,'diff');if(!c)return;if(_refAllineaUno(e,c)){saveData();openPartitaDettagli(id);toast('Evento corretto come sul referto')}}
+function refAggiungiEv(id,j){const [e,c]=_refC(id,j,'soloRef');if(!c)return;const k=_refAggiungiUno(e,c);
+if(k==='incompleta'){toast('Nella riga del referto manca il minuto o il giocatore',true);return}if(k==='oltre7'){toast("Ci sono gia' 7 sostituzioni",true);return}
+saveData();openPartitaDettagli(id);toast('Aggiunto alla partita')}
+function refTogliEv(id,j){const [e,c]=_refC(id,j,'soloApp');if(!c)return;const a=c.a;
+if(!confirm('Togliere dalla partita: '+(_REF_TIPI[a.tipo]||a.tipo)+(a.minuto!==''?' al '+a.minuto+"'":'')+'?'))return;
+if(a.k==='ev')e.eventiPartita.splice(a.i,1);else e.sostituzioni.splice(a.i,1);saveData();openPartitaDettagli(id);toast('Tolto dalla partita')}
+function refTutti(id){const e=fE(id);if(!e)return;const C=_refConfronto(e),D=C.filter(c=>c.st==='diff'),S=C.filter(c=>c.st==='soloRef');
+if(!confirm('Correggo '+D.length+' eventi e ne aggiungo '+S.length+' come sul referto. Quelli che non sono sul referto restano: li togli tu, uno per uno. Procedo?'))return;
+let c1=0,c2=0,sk=0;D.forEach(c=>{if(_refAllineaUno(e,c))c1++});S.forEach(c=>{if(_refAggiungiUno(e,c)==='ok')c2++;else sk++});
+saveData();openPartitaDettagli(id);toast('Corretti '+c1+', aggiunti '+c2+(sk?' - '+sk+' righe incomplete o oltre le 7 sostituzioni':''),!!sk)}
+function refRisUsa(id){const e=fE(id);if(!e)return;const {noi,loro}=_refR(e).ris;if(noi===''||loro==='')return;
+if(e.casaTrasferta==='trasferta'){e.golTrasferta=noi;e.golCasa=loro}else{e.golCasa=noi;e.golTrasferta=loro}e.completato=true;saveData();openPartitaDettagli(id);toast('Risultato in Info partita: '+noi+' - '+loro)}
+function refTabHTML(e,id){const R=_refR(e);if(R.file.length)setTimeout(()=>_refPrecarica(id),0);
+const gioc=DATA.giocatori.slice().sort((a,b)=>String(a.cognome).localeCompare(String(b.cognome)));
+const gOpt=(sel,vuoto)=>`<option value="">${vuoto}</option>`+gioc.map(g=>`<option value="${g.id}"${g.id===sel?' selected':''}>${esc((g.numero?g.numero+' - ':'')+g.cognome+' '+g.nome)}</option>`).join('');
+const mx=2*_crT(e)+15,noi=esc((DATA.squadra&&DATA.squadra.nome)||'Calenzano'),daApp=!R.righe.length&&_refApp(e).length;
+let h=`<div class="alert alert-info" style="margin-bottom:10px">Fotografa il referto o carica il PDF: resta <strong>solo su questo dispositivo</strong>. Poi riporta qui risultato, reti, cartellini e cambi: l'app li confronta con gli eventi della partita e ti mostra le differenze.</div>`;
+h+=`<h5 class="ref-h">1. Foto e PDF del referto</h5><div class="ref-files">${R.file.map(f=>`<div class="ref-file"><div class="ref-thumb" id="rf-${f.id}" onclick="refApri('${f.id}')"><span class="ref-miss">Carico...</span></div><button class="btn btn-sm btn-danger ref-del" onclick="refElimina('${id}','${f.id}')">X</button></div>`).join('')}</div><label class="btn btn-secondary btn-sm">Aggiungi foto o PDF<input type="file" accept="image/*,application/pdf" multiple style="display:none" onchange="refAggiungi('${id}',this)"></label>`;
+h+=`<h5 class="ref-h">2. Cosa c'e' scritto sul referto</h5><div class="ref-ris">Risultato: ${noi} <input type="number" class="form-input" min="0" max="40" value="${R.ris.noi}" onchange="refSet('${id}',0,'noi',this.value)"> - <input type="number" class="form-input" min="0" max="40" value="${R.ris.loro}" onchange="refSet('${id}',0,'loro',this.value)"> ${esc(e.avversario||'Avversario')}</div>`;
+h+=R.righe.map((r,k)=>{const sost=r.tipo==='sostituzione';return `<div class="voce-riga on"><span class="voce-chk">${k+1}</span><input type="number" class="form-input voce-min" min="1" max="${mx}" value="${r.minuto}" placeholder="min" onchange="refSet('${id}',${k},'minuto',this.value)"><select class="form-select" onchange="refSet('${id}',${k},'tipo',this.value)">${Object.entries(_REF_TIPI).map(([t,l])=>`<option value="${t}"${t===r.tipo?' selected':''}>${l}</option>`).join('')}</select><select class="form-select" onchange="refSet('${id}',${k},'g1',this.value)">${gOpt(r.g1,sost?'- esce -':'- giocatore -')}</select>${sost?`<select class="form-select" onchange="refSet('${id}',${k},'g2',this.value)">${gOpt(r.g2,'- entra -')}</select>`:''}<button class="btn btn-sm btn-danger" onclick="refTogli('${id}',${k})">X</button></div>`}).join('');
+h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-sm btn-secondary" onclick="refRiga('${id}')">+ Riga</button>${daApp?`<button class="btn btn-sm btn-secondary" onclick="refDaApp('${id}')">Parti dagli eventi della partita</button>`:''}</div>`;
+if(daApp)h+=`<p class="ref-help">"Parti dagli eventi della partita" copia qui reti, cartellini e cambi gia' inseriti: poi li correggi guardando il referto.</p>`;
+return h+`<h5 class="ref-h">3. Confronto con la partita</h5><div id="ref-conf">${refConfrontoHTML(e,id)}</div>`}
 function openPartitaDettagli(id){const e=fE(id);if(!e)return;
 /* FORMAZIONE_BLOCCO_v1: la scheda si riapre a ogni click sulla lavagna e a ogni
    modifica. Senza questo, i modali si impilano: gli id dei tab si duplicano e
@@ -964,10 +1095,10 @@ const formazione=e.formazione||[],panchina=e.panchina||[],sostituzioni=e.sostitu
 const tl=[];eventi.forEach(ev=>tl.push({min:ev.minuto||0,tipo:ev.tipo,gioc:ev.giocatoreId,kind:'ev'}));sostituzioni.forEach(s=>tl.push({min:s.minuto||0,gIn:s.in,gOut:s.out,kind:'sub'}));tl.sort((a,b)=>a.min-b.min);
 const tlHtml=tl.length?tl.map(x=>{if(x.kind==='sub'){const gI=fG(x.gIn),gO=fG(x.gOut);return `<div class="timeline-ev sub"><div class="minute">${x.min}'</div><div><strong>Sostituzione</strong><br><span style="color:var(--r2)">OUT: ${gO?pLink(gO):'-'}</span> &nbsp; <span style="color:var(--ok)">IN: ${gI?pLink(gI):'-'}</span></div></div>`}else{const g=fG(x.gioc);const labels={gol:'GOL',assist:'Assist',giallo:'Cartellino Giallo',rosso:'Cartellino Rosso',autogol:'Autogol',rigore:'Rigore segnato',rigoreSbagliato:'Rigore sbagliato',tiro:'Tiro',tiroDx:'Tiro destro',tiroSx:'Tiro sinistro',tiroTesta:'Tiro di testa'};const cls=x.tipo==='gol'?'gol':x.tipo==='giallo'?'giallo':x.tipo==='rosso'||x.tipo==='autogol'?'rosso':'';return `<div class="timeline-ev ${cls}"><div class="minute">${x.min}'</div><div><strong>${labels[x.tipo]||x.tipo}</strong><br>${g?pLink(g):'-'}</div></div>`}}).join(''):'<div class="empty-state">Nessun evento registrato per questa partita</div>';
 
-const body=`${cronoBarHTML(e,id)}<div class="tabs"><div class="tab active" onclick="switchTab(this,'tab-form')">Formazione</div><div class="tab" onclick="switchTab(this,'tab-eventi')">Eventi</div><div class="tab" onclick="switchTab(this,'tab-sub')">Sostituzioni</div><div class="tab" onclick="switchTab(this,'tab-voce')">Voce${(e.clip||[]).length?' ('+e.clip.length+')':''}</div><div class="tab" onclick="switchTab(this,'tab-info')">Info Partita</div></div>
+const body=`${cronoBarHTML(e,id)}<div class="tabs"><div class="tab active" onclick="switchTab(this,'tab-form')">Formazione</div><div class="tab" onclick="switchTab(this,'tab-eventi')">Eventi</div><div class="tab" onclick="switchTab(this,'tab-sub')">Sostituzioni</div><div class="tab" onclick="switchTab(this,'tab-voce')">Voce${(e.clip||[]).length?' ('+e.clip.length+')':''}</div><div class="tab" onclick="switchTab(this,'tab-ref')">Referto</div><div class="tab" onclick="switchTab(this,'tab-info')">Info Partita</div></div>
 <div id="tab-form" class="tab-pane">${tabFormazioneHTML(e,id)}</div>
 <div id="tab-eventi" class="tab-pane" style="display:none">
-${eventi.length?eventi.sort((a,b)=>(a.minuto||0)-(b.minuto||0)).map((ev,i)=>{const g=fG(ev.giocatoreId);const tipi={gol:'Gol',assist:'Assist',giallo:'Giallo',rosso:'Rosso',autogol:'Autogol',rigore:'Rigore',rigoreSbagliato:'Rig. Sbagl.',tiro:'Tiro',tiroDx:'Tiro destro',tiroSx:'Tiro sinistro',tiroTesta:'Tiro di testa'};const c={gol:'badge-ok',assist:'badge-info',giallo:'badge-warn',rosso:'badge-danger',autogol:'badge-danger'}[ev.tipo]||'badge-muted';return `<div class="convoca-row"><span style="font-weight:700;min-width:40px">${ev.minuto||'-'}'</span><span class="badge ${c}">${tipi[ev.tipo]||ev.tipo}</span><span class="name">${g?pLink(g):'-'}${ev.fonte==='voce'?' <span class="voce-tag">voce</span>':''}</span><button class="btn btn-sm btn-danger" onclick="rmEvP('${id}',${i})">X</button></div>`}).join(''):'<div class="empty-state">Nessun evento</div>'}
+${eventi.length?eventi.sort((a,b)=>(a.minuto||0)-(b.minuto||0)).map((ev,i)=>{const g=fG(ev.giocatoreId);const tipi={gol:'Gol',assist:'Assist',giallo:'Giallo',rosso:'Rosso',autogol:'Autogol',rigore:'Rigore',rigoreSbagliato:'Rig. Sbagl.',tiro:'Tiro',tiroDx:'Tiro destro',tiroSx:'Tiro sinistro',tiroTesta:'Tiro di testa'};const c={gol:'badge-ok',assist:'badge-info',giallo:'badge-warn',rosso:'badge-danger',autogol:'badge-danger'}[ev.tipo]||'badge-muted';return `<div class="convoca-row"><span style="font-weight:700;min-width:40px">${ev.minuto||'-'}'</span><span class="badge ${c}">${tipi[ev.tipo]||ev.tipo}</span><span class="name">${g?pLink(g):'-'}${ev.fonte?' <span class="voce-tag">'+esc(ev.fonte)+'</span>':''}</span><button class="btn btn-sm btn-danger" onclick="rmEvP('${id}',${i})">X</button></div>`}).join(''):'<div class="empty-state">Nessun evento</div>'}
 <div style="margin-top:14px;padding:14px;background:var(--b4);border-radius:8px"><h5 style="margin-bottom:10px">+ Aggiungi evento</h5><div class="form-row-4"><select class="form-select" id="ev-tipo"><option value="gol">Gol</option><option value="assist">Assist</option><option value="giallo">Giallo</option><option value="rosso">Rosso</option><option value="autogol">Autogol</option><option value="rigore">Rigore</option><option value="rigoreSbagliato">Rig.Sbagl.</option><option value="tiro">Tiro (piede non indicato)</option><option value="tiroDx">Tiro destro</option><option value="tiroSx">Tiro sinistro</option><option value="tiroTesta">Tiro di testa</option></select><select class="form-select" id="ev-gioc">${[...formazione,...panchina].map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><input type="number" class="form-input" id="ev-min" placeholder="${cronoMinuto(e)?'Min auto':'Minuto'}" min="1" max="${e.durata||70}"><button class="btn btn-primary btn-sm" onclick="addEvP('${id}')">+</button></div></div>
 </div>
 <div id="tab-sub" class="tab-pane" style="display:none">
@@ -975,6 +1106,7 @@ ${sostituzioni.map((s,i)=>{const gI=fG(s.in),gO=fG(s.out);return `<div class="co
 <div style="margin-top:14px;padding:14px;background:var(--b4);border-radius:8px"><h5 style="margin-bottom:10px">+ Aggiungi sostituzione (max 7)</h5><div class="form-row-4"><select class="form-select" id="sub-out"><option value="">Esce...</option>${formazione.map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><select class="form-select" id="sub-in"><option value="">Entra...</option>${panchina.map(gId=>{const g=fG(gId);return g?`<option value="${g.id}">${esc(fn(g))}</option>`:''}).join('')}</select><input type="number" class="form-input" id="sub-min" placeholder="${cronoMinuto(e)?'Auto':'Min'}" min="1" max="${e.durata||70}"><button class="btn btn-primary btn-sm" onclick="addSub('${id}')">+</button></div></div>
 </div>
 <div id="tab-voce" class="tab-pane" style="display:none">${clipTabHTML(e,id)}${regTabHTML(e,id)}${voceImportHTML(e,id)}</div>
+<div id="tab-ref" class="tab-pane" style="display:none">${refTabHTML(e,id)}</div>
 <div id="tab-info" class="tab-pane" style="display:none">
 <div style="background:var(--b4);padding:14px;border-radius:8px;margin-bottom:14px">
 <p><strong>Data:</strong> ${fmtDateLong(e.data)} - <strong>Ora:</strong> ${e.ora||'-'}</p>
