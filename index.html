@@ -189,7 +189,11 @@ tr.clickable{cursor:pointer}
    della lavagna tattica costringono a scorrere per vedere la difesa. */
 .modal-overlay .field-container{max-width:340px}
 /* FORMAZIONE_BLOCCO_v1: i tab restano appesi in alto mentre si scorre la lavagna, se no i campi di Eventi e Sostituzioni sembrano non esserci. */
-.modal-overlay .tabs{position:sticky;top:0;z-index:6;background:#fff;margin:0;padding-top:2px}
+.modal-overlay .tabs{position:sticky;top:var(--mh,0px);z-index:6;background:#fff;margin:0;padding-top:2px}
+/* RITOCCO_MOBILE_v1: i tab si appendono SOTTO il titolo (altezza misurata in openModal); il titolo resta
+   sopra le pedine; sul telefono campo e lista vanno uno sotto l'altro. */
+.modal-overlay .modal-header{z-index:7}
+@media (max-width:640px){.g-stack{grid-template-columns:1fr!important}.modal-overlay{padding:8px}.modal{max-height:96vh}.modal-header,.modal-body,.modal-footer{padding-left:14px;padding-right:14px}}
 /* WA_IMMAGINE_v1: con Panca + Non disp. la riga si stringe: bottoni compatti e mai a capo */
 .modal-overlay .convoca-row .btn-sm{white-space:nowrap;padding:4px 8px;font-size:11px}
 .modal-overlay .convoca-row .name{min-width:0}
@@ -261,7 +265,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01g - registrazioni del secondo allenatore</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01h - scheda partita leggibile sul telefono</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -550,7 +554,8 @@ window.addEventListener('load',function(){setTimeout(function(){cloudStatus();cl
 window.addEventListener('focus',function(){var n=Date.now();if(n-_cfocus<60000)return;_cfocus=n;cloudSync(false)});
 function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));document.getElementById('view-'+v).classList.add('active');document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===v));const T={dashboard:'Dashboard',rosa:'Rosa Giocatori',calendario:'Calendario',presenze:'Presenze Allenamenti',esercizi:'Archivio Esercizi',partite:'Partite',convocazioni:'Convocazioni',comegiochiamo:'Come Giochiamo',ritiro:'Ritiro',modello:'Modello di Gioco',tattica:'Lavagna Tattica',schede:'Schede Ruolo',statistiche:'Statistiche',valutazioni:'Valutazioni',scadenze:'Scadenze',comunicazioni:'Comunicazioni',impostazioni:'Impostazioni',import:'Import / Backup'};document.getElementById('topbar-title').textContent=T[v]||v;if(window.innerWidth<=900)document.getElementById('sidebar').classList.remove('open');if(typeof window['render_'+v]==='function')window['render_'+v]()}
 document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',()=>showView(el.dataset.view)));
-function openModal(title,body,footer,opts){opts=opts||{};const o=document.createElement('div');o.className='modal-overlay';o.innerHTML=`<div class="modal ${opts.large?'modal-lg':''}"><div class="modal-header"><div class="modal-title">${esc(title)}</div><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button></div><div class="modal-body">${body}</div>${footer?`<div class="modal-footer">${footer}</div>`:''}</div>`;o.addEventListener('click',e=>{if(e.target===o)o.remove()});document.getElementById('modal-root').appendChild(o);return o}
+/* RITOCCO_MOBILE_v1: altezza del titolo del modale in --mh, per appendere i tab subito sotto */function _mhSet(o){const md=o.querySelector('.modal'),mh=o.querySelector('.modal-header');if(!md||!mh)return;const f=()=>md.style.setProperty('--mh',mh.offsetHeight+'px');f();if(window.ResizeObserver)new ResizeObserver(f).observe(mh)}
+function openModal(title,body,footer,opts){opts=opts||{};const o=document.createElement('div');o.className='modal-overlay';o.innerHTML=`<div class="modal ${opts.large?'modal-lg':''}"><div class="modal-header"><div class="modal-title">${esc(title)}</div><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button></div><div class="modal-body">${body}</div>${footer?`<div class="modal-footer">${footer}</div>`:''}</div>`;o.addEventListener('click',e=>{if(e.target===o)o.remove()});document.getElementById('modal-root').appendChild(o);_mhSet(o);return o}
 function closeModal(){document.querySelectorAll('.modal-overlay').forEach(o=>o.remove())}
 function resetForm(formId){if(!confirm('Sei sicuro? Verranno cancellati tutti i campi non ancora salvati.'))return;const f=document.getElementById(formId);if(f)f.reset()}
 function waLink(text){return 'https://wa.me/?text='+encodeURIComponent(text)}
@@ -1077,7 +1082,7 @@ shareWAGruppo(t)}
 // ============ TATTICA ============
 let _tatModulo='4-3-3',_tatAss={},_tatSel=null;
 function render_tattica(){const positions=MODULI[_tatModulo];document.getElementById('view-tattica').innerHTML=`<div class="toolbar no-print"><label class="form-label" style="margin:0">Modulo:</label><select class="form-select" style="width:auto" onchange="_tatModulo=this.value;_tatAss={};render_tattica()">${Object.keys(MODULI).map(m=>`<option ${_tatModulo===m?'selected':''}>${m}</option>`).join('')}</select><button class="btn btn-secondary btn-sm" onclick="autoTat()">Auto-Assegna</button><button class="btn btn-secondary btn-sm" onclick="if(confirm('Svuotare il campo?')){_tatAss={};render_tattica()}">Reset Campo</button><div style="flex:1"></div><button class="btn btn-wa btn-sm" onclick="shareTatticaWA()">Condividi WA</button> <button class="btn btn-primary btn-sm" onclick="window.print()">Stampa</button></div>
-<div class="grid" style="grid-template-columns:1fr 280px;gap:20px;align-items:start">
+<div class="grid g-stack" style="grid-template-columns:1fr 280px;gap:20px;align-items:start">
 <div class="card"><div class="card-header"><div class="card-title">Schema ${_tatModulo}</div></div>
 <div class="field-container"><div class="field-bg"></div>
 ${positions.map((p,i)=>{const gId=_tatAss[i];const g=gId?fG(gId):null;return `<div class="player-spot" style="left:${p.x}%;top:${p.y}%" onclick="selTat(${i})" title="${RUOLI[p.r]?.label||p.r}"><div class="player-token ${p.r==='POR'?'por':''} ${!g?'empty':''}">${g?(g.numero||''):p.r}</div>${g?`<div class="player-surname">${esc(g.cognome)}</div>`:''}</div>`}).join('')}
@@ -1217,7 +1222,7 @@ ${indisp.length?indisp.map(gId=>{const g=fG(gId);return g?`<div class="convoca-r
 <div style="max-height:460px;overflow-y:auto">${listaRuoliHTML(liberi,g=>`_partSel='${g.id}';openPartitaDettagli('${id}');toast('Selezionato ${esc(fn(g))}')`,_partSel,g=>`<button class="btn btn-sm btn-secondary" onclick="partPanca('${id}','${g.id}',event)">Panca</button> <button class="btn btn-sm btn-secondary" onclick="partIndisp('${id}','${g.id}',event)" title="Segna come non disponibile">Non disp.</button>`)}</div>`;
 
  return `${testa}
-<div class="grid" style="grid-template-columns:${bloc?'1fr 220px':'1fr 320px'};gap:16px;align-items:start">
+<div class="grid g-stack" style="grid-template-columns:${bloc?'1fr 220px':'1fr 320px'};gap:16px;align-items:start">
 <div>${campo}${panca}${nonDisp}</div>
 <div>${laterale}</div>
 </div>
