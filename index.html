@@ -263,6 +263,12 @@ tr.clickable{cursor:pointer}
 #ref-viewer .ref-sc{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
 #ref-viewer img{display:block;width:100%;height:auto}
 #ref-viewer img.zoom{width:250%;max-width:none}
+/* ROSA_AL_PC_v1 */
+.ruoli-help{font-size:12px;color:var(--muted);margin-bottom:10px}
+.ruoli-riga{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.ruoli-riga .name{flex:1;min-width:0;font-weight:500;font-size:13px}
+.ruoli-riga .rr-num{width:60px;padding:5px 6px}
+.ruoli-riga .rr-ruolo{width:auto;max-width:200px;padding:5px 6px;font-size:12px}
 </style>
 </head>
 <body>
@@ -292,7 +298,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01i - referto e confronto con la partita</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.01j - ruoli e numeri, rosa al PC</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -625,7 +631,7 @@ ${tA.length===0?'<div class="empty-state">Nessun assist registrato</div>':tA.map
 // ============ ROSA ============
 let _rosaFilter={search:'',ruolo:''};let _rosaView='cards';
 function render_rosa(){const filt=DATA.giocatori.filter(g=>{if(_rosaFilter.search){const s=_rosaFilter.search.toLowerCase();if(!fn(g).toLowerCase().includes(s))return false}if(_rosaFilter.ruolo&&rCat(g.ruolo)!==_rosaFilter.ruolo)return false;return true}).sort((a,b)=>(a.numero||99)-(b.numero||99));
-document.getElementById('view-rosa').innerHTML=`${DATA.giocatori.length?'':'<div class="alert alert-info">La rosa non e\' scritta nella pagina, che e\' pubblica: arriva con la sincronia. '+(_ctok()?'Sincronia collegata: premi Aggiorna in alto.':'Collegati dal menu, in fondo: <strong>collega</strong>.')+'</div>'}<div class="toolbar no-print"><input class="search-input" placeholder="Cerca giocatore..." value="${esc(_rosaFilter.search)}" oninput="_rosaFilter.search=this.value;render_rosa()"><select class="form-select" style="width:auto" onchange="_rosaFilter.ruolo=this.value;render_rosa()"><option value="">Tutti i ruoli</option><option value="POR" ${_rosaFilter.ruolo==='POR'?'selected':''}>Portieri</option><option value="DIF" ${_rosaFilter.ruolo==='DIF'?'selected':''}>Difensori</option><option value="CEN" ${_rosaFilter.ruolo==='CEN'?'selected':''}>Centrocampisti</option><option value="ATT" ${_rosaFilter.ruolo==='ATT'?'selected':''}>Attaccanti</option></select><button class="btn btn-secondary btn-sm" onclick="_rosaView=_rosaView==='cards'?'table':'cards';render_rosa()">Vista: ${_rosaView==='cards'?'Tabella':'Card'}</button><button class="btn btn-wa btn-sm" onclick="shareRosaWA()">Condividi Rosa WA</button><div style="flex:1"></div><button class="btn btn-primary" onclick="openGiocatoreModal()">+ Nuovo Giocatore</button></div>
+document.getElementById('view-rosa').innerHTML=`${DATA.giocatori.length?'':'<div class="alert alert-info">La rosa non e\' scritta nella pagina, che e\' pubblica: arriva con la sincronia. '+(_ctok()?'Sincronia collegata: premi Aggiorna in alto.':'Collegati dal menu, in fondo: <strong>collega</strong>.')+'</div>'}<div class="toolbar no-print"><input class="search-input" placeholder="Cerca giocatore..." value="${esc(_rosaFilter.search)}" oninput="_rosaFilter.search=this.value;render_rosa()"><select class="form-select" style="width:auto" onchange="_rosaFilter.ruolo=this.value;render_rosa()"><option value="">Tutti i ruoli</option><option value="POR" ${_rosaFilter.ruolo==='POR'?'selected':''}>Portieri</option><option value="DIF" ${_rosaFilter.ruolo==='DIF'?'selected':''}>Difensori</option><option value="CEN" ${_rosaFilter.ruolo==='CEN'?'selected':''}>Centrocampisti</option><option value="ATT" ${_rosaFilter.ruolo==='ATT'?'selected':''}>Attaccanti</option></select><button class="btn btn-secondary btn-sm" onclick="_rosaView=_rosaView==='cards'?'table':'cards';render_rosa()">Vista: ${_rosaView==='cards'?'Tabella':'Card'}</button><button class="btn btn-secondary btn-sm" onclick="openRuoliModal()">Ruoli e numeri</button><button class="btn btn-wa btn-sm" onclick="shareRosaWA()">Condividi Rosa WA</button><div style="flex:1"></div><button class="btn btn-primary" onclick="openGiocatoreModal()">+ Nuovo Giocatore</button></div>
 ${filt.length===0?'<div class="empty-state">Nessun giocatore</div>':_rosaView==='cards'?`<div class="grid grid-3">${filt.map(g=>`<div class="player-card" onclick="openGiocatoreModal('${g.id}')"><div class="player-photo">${g.foto?`<img src="${esc(g.foto)}">`:`${esc(g.nome[0]||'')}${esc(g.cognome[0]||'')}`}<div class="player-number">${g.numero||'-'}</div></div><div class="player-info"><div class="player-name">${esc(fn(g))}</div><div class="player-meta"><span class="badge ${rBadge(g.ruolo)}">${g.ruolo}</span><span>${age(g.dataNascita)} anni</span></div></div></div>`).join('')}</div>`:`<div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>#</th><th>Cognome</th><th>Nome</th><th>Ruolo</th><th>Eta</th><th>Cert.Scad</th><th>Stato</th></tr></thead><tbody>${filt.map(g=>`<tr class="clickable" onclick="openGiocatoreModal('${g.id}')"><td><strong>${g.numero||'-'}</strong></td><td><strong>${esc(g.cognome)}</strong></td><td>${esc(g.nome)}</td><td><span class="badge ${rBadge(g.ruolo)}">${g.ruolo}</span></td><td>${age(g.dataNascita)}</td><td>${g.certScadenza?fmtDate(g.certScadenza):'<span class="badge badge-danger">Manca</span>'}</td><td><span class="badge badge-${g.stato==='attivo'?'ok':'warn'}">${g.stato||'attivo'}</span></td></tr>`).join('')}</tbody></table></div>`}`}
 
 function openGiocatoreModal(id){const g=id?fG(id):null;const isNew=!g;
@@ -633,7 +639,7 @@ const body=`<div class="tabs"><div class="tab active" onclick="switchTab(this,'t
 <form id="fg" onsubmit="event.preventDefault();saveGiocatore('${id||''}')">
 <div id="tab-anag" class="tab-pane">
 <div class="form-row-3"><div class="form-group"><label class="form-label">Nome*</label><input class="form-input" name="nome" value="${esc(g?.nome||'')}" required></div><div class="form-group"><label class="form-label">Cognome*</label><input class="form-input" name="cognome" value="${esc(g?.cognome||'')}" required></div><div class="form-group"><label class="form-label">N. Maglia</label><input type="number" class="form-input" name="numero" value="${g?.numero||''}"></div></div>
-<div class="form-row-3"><div class="form-group"><label class="form-label">Data Nascita*</label><input type="date" class="form-input" name="dataNascita" value="${g?.dataNascita||''}" required></div><div class="form-group"><label class="form-label">Ruolo</label><select class="form-select" name="ruolo">${Object.keys(RUOLI).map(r=>`<option value="${r}" ${g?.ruolo===r?'selected':''}>${r} - ${RUOLI[r].label}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Piede</label><select class="form-select" name="piede"><option value="destro" ${g?.piede==='destro'?'selected':''}>Destro</option><option value="sinistro" ${g?.piede==='sinistro'?'selected':''}>Sinistro</option><option value="ambidestro" ${g?.piede==='ambidestro'?'selected':''}>Ambidestro</option></select></div></div>
+<div class="form-row-3"><div class="form-group"><label class="form-label">Data Nascita*</label><input type="date" class="form-input" name="dataNascita" value="${g?.dataNascita||''}" required></div><div class="form-group"><label class="form-label">Ruolo</label><select class="form-select" name="ruolo"><option value="">- da assegnare -</option>${Object.keys(RUOLI).map(r=>`<option value="${r}" ${g?.ruolo===r?'selected':''}>${r} - ${RUOLI[r].label}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Piede</label><select class="form-select" name="piede"><option value="destro" ${g?.piede==='destro'?'selected':''}>Destro</option><option value="sinistro" ${g?.piede==='sinistro'?'selected':''}>Sinistro</option><option value="ambidestro" ${g?.piede==='ambidestro'?'selected':''}>Ambidestro</option></select></div></div>
 <div class="form-row"><div class="form-group"><label class="form-label">Stato</label><select class="form-select" name="stato"><option value="attivo" ${g?.stato==='attivo'?'selected':''}>Attivo</option><option value="infortunato" ${g?.stato==='infortunato'?'selected':''}>Infortunato</option><option value="squalificato" ${g?.stato==='squalificato'?'selected':''}>Squalificato</option><option value="sospeso" ${g?.stato==='sospeso'?'selected':''}>Sospeso</option></select></div><div class="form-group"><label class="form-label">Data Ingresso</label><input type="date" class="form-input" name="dataIngresso" value="${g?.dataIngresso||todayISO()}"></div></div>
 <div class="form-group"><label class="form-label">Foto</label><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div id="fotoPrev" style="width:78px;height:78px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,var(--b2),var(--r2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:25px;flex:0 0 auto">${g?.foto?`<img src="${esc(g.foto)}" style="width:100%;height:100%;object-fit:cover">`:`${esc(g?.nome?.[0]||'')}${esc(g?.cognome?.[0]||'')}`}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" onclick="document.getElementById('fotoCam').click()">Scatta foto</button><button type="button" class="btn btn-sec" onclick="document.getElementById('fotoFile').click()">Galleria</button><button type="button" class="btn btn-sec" onclick="fotoClear()">Rimuovi</button></div></div><input type="file" id="fotoCam" accept="image/*" capture="environment" style="display:none" onchange="fotoPick(this)"><input type="file" id="fotoFile" accept="image/*" style="display:none" onchange="fotoPick(this)"><input type="hidden" name="foto" id="fotoData" value="${esc(g?.foto||'')}"><div id="fotoMsg" style="font-size:11px;color:var(--muted);margin-top:6px">Dal telefono: "Scatta foto" apre la fotocamera. Poi premi Salva.</div></div>
 </div>
@@ -932,6 +938,7 @@ if(!_pcUrl()){pcImposta(id);if(!_pcUrl())return}
 _pcMsg(id,'Cerco il PC...',false,true);
 /* 30 s: la prima volta Chrome puo' chiedere il permesso per la rete locale e la richiesta aspetta la risposta */
 try{await _pcFetch('/stato',{},30000)}catch(err){_pcMsg(id,"PC non raggiungibile ("+err.message+"). Tailscale e' attivo su questo dispositivo? Il PC e' acceso? Se il telefono chiede il permesso per la rete locale, rispondi Consenti.",true,false);return}
+_pcMsg(id,'Aggiorno la rosa sul PC...',false,true);await pcRosa(false);
 const cl=e.clip||[];let inviate=0,assenti=0;
 for(let i=0;i<cl.length;i++){const c=cl[i];let r=null;try{r=await mediaGet(c.id)}catch(_){}if(!r||!r.blob){assenti++;continue}
 _pcMsg(id,'Invio clip '+(i+1)+' di '+cl.length+'...',false,true);
@@ -1084,6 +1091,28 @@ h+=R.righe.map((r,k)=>{const sost=r.tipo==='sostituzione';return `<div class="vo
 h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-sm btn-secondary" onclick="refRiga('${id}')">+ Riga</button>${daApp?`<button class="btn btn-sm btn-secondary" onclick="refDaApp('${id}')">Parti dagli eventi della partita</button>`:''}</div>`;
 if(daApp)h+=`<p class="ref-help">"Parti dagli eventi della partita" copia qui reti, cartellini e cambi gia' inseriti: poi li correggi guardando il referto.</p>`;
 return h+`<h5 class="ref-h">3. Confronto con la partita</h5><div id="ref-conf">${refConfrontoHTML(e,id)}</div>`}
+/* ROSA_AL_PC_v1: ruoli e numeri in una schermata; la rosa (cognome, nome, numero,
+   ruolo) va al PC dentro Tailscale, per Whisper e per l'abbinamento dei cognomi. */
+function openRuoliModal(){const G=DATA.giocatori.slice().sort((a,b)=>String(a.cognome).localeCompare(String(b.cognome)));
+if(!G.length){toast("La rosa e' vuota: arriva con la sincronia",true);return}
+const opt=sel=>'<option value="">- da assegnare -</option>'+Object.keys(RUOLI).map(r=>`<option value="${r}"${sel===r?' selected':''}>${r} - ${RUOLI[r].label}</option>`).join('');
+const senza=G.filter(g=>!g.ruolo).length;
+const body=`<p class="ruoli-help">Numero di maglia e ruolo principale di ogni giocatore${senza?' - <strong>'+senza+' senza ruolo</strong>':''}. Salvando, i dati vanno agli altri dispositivi con la sincronia${_pcUrl()?' e al PC per la trascrizione della voce':''}. Nella pagina pubblica non finisce niente.</p>`
++G.map(g=>`<div class="ruoli-riga" data-id="${g.id}"><span class="name">${esc(g.cognome+' '+g.nome)}</span><input type="number" class="form-input rr-num" min="1" max="99" value="${g.numero||''}" placeholder="n."><select class="form-select rr-ruolo">${opt(g.ruolo||'')}</select></div>`).join('');
+openModal('Ruoli e numeri',body,'<button class="btn btn-secondary" onclick="closeModal()">Annulla</button><button class="btn btn-primary" onclick="salvaRuoli()">Salva</button>')}
+function salvaRuoli(){const righe=[...document.querySelectorAll('.ruoli-riga')],visti={},dup=new Set();
+righe.forEach(r=>{const n=parseInt(r.querySelector('.rr-num').value);if(n>0){if(visti[n])dup.add(n);visti[n]=1}});
+if(dup.size){toast('Numero di maglia ripetuto: '+[...dup].join(', '),true);return}
+let ch=0;righe.forEach(r=>{const g=fG(r.dataset.id);if(!g)return;const n=parseInt(r.querySelector('.rr-num').value),nn=n>0?n:'',ru=r.querySelector('.rr-ruolo').value;
+if(String(g.numero||'')!==String(nn)||String(g.ruolo||'')!==ru){g.numero=nn;g.ruolo=ru;ch++}});
+closeModal();if(!ch){toast('Nessuna modifica');return}
+saveData();render_rosa();toast(ch===1?'1 giocatore aggiornato':ch+' giocatori aggiornati');if(_pcUrl())pcRosa(true)}
+/* avvisa=true: messaggio anche quando va bene (salvataggio dei ruoli); false: in silenzio (prima delle clip) */
+async function pcRosa(avvisa){if(!_pcUrl())return false;
+const G=DATA.giocatori.map(g=>({numero:parseInt(g.numero)||null,nome:String(g.nome||''),cognome:String(g.cognome||''),ruolo:String(g.ruolo||'')})).filter(g=>g.cognome);if(!G.length)return false;
+try{const j=await _pcFetch('/rosa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({giocatori:G})},15000);
+if(avvisa)toast(j.cambiata?'Rosa aggiornata anche sul PC':"Il PC aveva gia' questa rosa");return true}
+catch(err){if(avvisa)toast('Rosa non arrivata al PC ('+err.message+'): partira\' con il prossimo invio delle clip',true);return false}}
 function openPartitaDettagli(id){const e=fE(id);if(!e)return;
 /* FORMAZIONE_BLOCCO_v1: la scheda si riapre a ogni click sulla lavagna e a ogni
    modifica. Senza questo, i modali si impilano: gli id dei tab si duplicano e
