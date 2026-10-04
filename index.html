@@ -363,7 +363,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.04e - posizioni della formazione dalla cronaca</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.04f - WhatsApp manda la scheda aperta della partita</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -673,7 +673,7 @@ function shareWA(text){
  }
  window.open(waLink(text),'_blank')}
 function shareWAGruppo(text){if(DATA.squadra.whatsappGruppo){const u=DATA.squadra.whatsappGruppo.includes('chat.whatsapp.com')?DATA.squadra.whatsappGruppo:waLink(text);window.open(u,'_blank');if(u.includes('chat.whatsapp.com'))navigator.clipboard.writeText(text).then(()=>toast('Testo copiato. Incollalo nel gruppo'))}else shareWA(text)}
-function switchTab(el,paneId){el.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');el.closest('.modal-body, .view').querySelectorAll('.tab-pane').forEach(p=>p.style.display='none');document.getElementById(paneId).style.display='block';const _cb=document.getElementById('crono-bar');if(_cb&&el.closest('.modal'))_partTab={id:_cb.dataset.pid,pane:paneId}}
+function switchTab(el,paneId){el.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');el.closest('.modal-body, .view').querySelectorAll('.tab-pane').forEach(p=>p.style.display='none');document.getElementById(paneId).style.display='block';const _cb=document.getElementById('crono-bar');if(_cb&&el.closest('.modal'))_partTab={id:_cb.dataset.pid,pane:paneId};if(el.closest('.modal'))_waPartLab(paneId)}
 
 // ============ DASHBOARD ============
 function render_dashboard(){const tg=DATA.giocatori.length,at=DATA.giocatori.filter(g=>g.stato==='attivo').length,inf=DATA.giocatori.filter(g=>g.stato==='infortunato').length,allN=DATA.eventi.filter(isA).length,par=DATA.eventi.filter(isP);let gv=0,gs=0,v=0,p=0,pa=0;par.forEach(x=>{if(x.completato){const m=x.casaTrasferta==='trasferta'?x.golTrasferta:x.golCasa,o=x.casaTrasferta==='trasferta'?x.golCasa:x.golTrasferta;gv+=m||0;gs+=o||0;if(m>o)v++;else if(m<o)p++;else pa++}});const now=new Date();const fu=DATA.eventi.filter(e=>new Date(e.data+'T'+(e.ora||'00:00'))>=now).sort((a,b)=>(a.data+(a.ora||'')).localeCompare(b.data+(b.ora||'')));const past=DATA.eventi.filter(e=>new Date(e.data+'T'+(e.ora||'23:59'))<now).sort((a,b)=>(b.data+(b.ora||'')).localeCompare(a.data+(a.ora||'')));const stt=DATA.giocatori.map(g=>({g,s:stats(g.id)}));const tG=stt.filter(x=>x.s.gol>0).sort((a,b)=>b.s.gol-a.s.gol).slice(0,5);const tA=stt.filter(x=>x.s.assist>0).sort((a,b)=>b.s.assist-a.s.assist).slice(0,5);
@@ -1246,7 +1246,7 @@ function statsTabHTML(e,id){const {n,l}=partStats(e),casa=e.casaTrasferta!=='tra
  const pr=x=>x.tiri?Math.round(x.porta/x.tiri*100)+'%':'-';
  h+=`<div class="st-row"><div class="st-lab"><b>${pr(S[0].v)}</b><span>Precisione al tiro</span><b>${pr(S[1].v)}</b></div></div>`;
  h+=`<p style="font-size:11px;color:var(--muted);margin-top:12px">I tiri in porta comprendono i gol; le parate sono i tiri in porta dell'avversario non finiti in rete. Possesso palla non rilevato.${(e.eventiAvv||[]).length?'':' Eventi dell\'avversario non registrati: i suoi numeri sono incompleti.'}</p>`;
- h+=`<div style="margin-top:12px"><button class="btn btn-wa btn-sm" onclick="cronacaShare('${id}')">Condividi su WhatsApp</button></div>`;
+ h+=`<div style="margin-top:12px"><button class="btn btn-wa btn-sm" onclick="condividiStatsWA('${id}')">Condividi su WhatsApp</button></div>`;
  return h}
 function cronacaTabHTML(e,id){_imgPronta(_logoSrc());const c=e.cronaca;let h='';
  if(!c)h+='<div class="empty-state">Nessuna cronaca per questa partita.<br><span style="font-size:12px">Dopo la partita mandi gli appunti a Claude, che prepara la cronaca sul PC: qui sotto la importi.</span></div>';
@@ -1473,6 +1473,72 @@ function _cronacaTesto(e){const c=e.cronaca;if(!c){const m=_marcLista(e).map(z=>
  (c.righe||[]).forEach(r=>{if(r.t!==t0){t0=r.t;t+='\n\n*'+(r.t===1?'PRIMO TEMPO':'SECONDO TEMPO')+'*'}t+='\n'+(r.fine?'*'+r.testo+'*':(r.m!=null?r.m+"' ":'')+r.testo+(r.gol&&r.ris?' ('+r.ris+')':''))});
  if(c.sintesi)t+='\n\n'+c.sintesi;return t}
 function cronacaShare(id){const e=fE(id);if(!e)return;_imgCondividi(_imgCronaca(e),'partita-'+(e.data||'')+'.png',_cronacaTesto(e))}
+/* WA_SCHEDE_v1: in Dettagli partita il pulsante WhatsApp in fondo manda la scheda aperta.
+   Formazione, Voce e Referto -> formazione (le foto del referto restano sul telefono). */
+const _WA_TAB={'tab-form':'Formazione','tab-eventi':'Eventi','tab-sub':'Sostituzioni','tab-voce':'Formazione','tab-ref':'Formazione','tab-voti':'Voti','tab-cron':'Cronaca','tab-pstat':'Statistiche','tab-info':'Info partita'};
+function _waTab(){const t=document.querySelector('.modal .tabs .tab.active'),m=t&&(t.getAttribute('onclick')||'').match(/'(tab-[a-z]+)'/);return m?m[1]:'tab-form'}
+function _waPartLab(p){const b=document.getElementById('wa-part-btn');if(b)b.textContent='WhatsApp: '+(_WA_TAB[p]||'Formazione')}
+function condividiPartitaTabWA(id){const F={'tab-eventi':condividiEventiWA,'tab-sub':condividiSostWA,'tab-voti':condividiVotiWA,'tab-cron':cronacaShare,'tab-pstat':condividiStatsWA,'tab-info':condividiInfoWA}[_waTab()]||condividiPartitaWA;F(id)}
+const _EV_LAB={gol:'GOL',assist:'Assist',giallo:'Cartellino giallo',rosso:'Cartellino rosso',autogol:'Autogol',rigore:'Rigore segnato',rigoreSbagliato:'Rigore sbagliato',tiro:'Tiro',tiroDx:'Tiro destro',tiroSx:'Tiro sinistro',tiroTesta:'Tiro di testa',fallo:'Fallo',fuorigioco:'Fuorigioco',golAnnullato:'Gol annullato',angolo:"Calcio d'angolo"};
+const _EV_COL={gol:['#16a34a','#fff'],rigore:['#16a34a','#fff'],assist:['#2563eb','#fff'],giallo:['#facc15','#422006'],rosso:['#dc2626','#fff'],autogol:['#dc2626','#fff'],golAnnullato:['#64748b','#fff'],rigoreSbagliato:['#64748b','#fff']};
+function _waRel(e,x){const T=_crT(e),m=x.minuto||0,t=x.t||(m>T?2:1);return {t,m:t===2?m-T:m}}
+function _waTempo(t){return t===1?'Primo tempo':t===2?'Secondo tempo':'Tempo '+t}
+function _waG(g){return g?(g.numero?g.numero+' ':'')+fn(g):'-'}
+function _waRighe(e,ev,sub){const R=[];
+ if(ev)(e.eventiPartita||[]).forEach(x=>R.push({..._waRel(e,x),k:'ev',tipo:x.tipo,lab:(_EV_LAB[x.tipo]||x.tipo)+evEsito(x),g:fG(x.giocatoreId)}));
+ if(sub)(e.sostituzioni||[]).forEach(s=>R.push({..._waRel(e,s),k:'sub',gOut:fG(s.out),gIn:fG(s.in)}));
+ return R.map((z,i)=>({...z,i})).sort((a,b)=>a.t-b.t||a.m-b.m||a.i-b.i)}
+function _waRigheTesto(e,R){let t='',t0=0;R.forEach(z=>{if(z.t!==t0){t0=z.t;t+='\n\n*'+_waTempo(z.t)+'*'}t+='\n'+z.m+"' "+(z.k==='sub'?'Esce '+_waG(z.gOut)+', entra '+_waG(z.gIn):z.lab+(z.g?' - '+_waG(z.g):''))});return t}
+function _waTesta(e,tit){const gi=_partG(e);return '*'+tit+' - '+matchLabel(e)+' '+(e.golCasa||0)+'-'+(e.golTrasferta||0)+'*\n'+(gi?gi+'a giornata - ':'')+fmtDateLong(e.data)}
+function _imgRigheH(R){return R.length?R.length*58+new Set(R.map(z=>z.t)).size*54+24:110}
+function _imgRighe(x,y,R,vuoto){const X=40,W=IMG_W-80,H=_imgRigheH(R);x.fillStyle='#fff';_rr(x,X,y,W,H,24);x.fill();
+ if(!R.length){x.fillStyle='#64748b';x.textAlign='center';x.font=`26px ${IMG_F}`;x.fillText(vuoto,IMG_W/2,y+64);return y+H}
+ let yy=y+12,t0=0,k=0;R.forEach(z=>{
+  if(z.t!==t0){t0=z.t;k=0;x.textAlign='left';x.fillStyle='#64748b';x.font=`bold 20px ${IMG_F}`;x.fillText(_waTempo(z.t).toUpperCase(),X+28,yy+36);x.fillStyle='#e2e8f0';x.fillRect(X+28,yy+48,W-56,2);yy+=54}
+  const my=yy+29;if(k++%2){x.fillStyle='#f1f5f9';_rr(x,X+12,yy+2,W-24,54,12);x.fill()}
+  x.fillStyle='#0d2b5c';_rr(x,X+24,yy+9,84,40,20);x.fill();x.fillStyle='#fff';x.textAlign='center';x.font=`bold 24px ${IMG_F}`;x.fillText(z.m+"'",X+66,my+8);
+  if(z.k==='sub'){const half=(W-140)/2;[[z.gOut,'ESCE','#dc2626',X+124],[z.gIn,'ENTRA','#16a34a',X+124+half]].forEach(([g,lab,col,xx])=>{x.font=`bold 18px ${IMG_F}`;const bw=x.measureText(lab).width+22;x.fillStyle=col;_rr(x,xx,yy+14,bw,30,15);x.fill();x.fillStyle='#fff';x.textAlign='center';x.fillText(lab,xx+bw/2,my+6);
+    x.textAlign='left';x.fillStyle='#0d2b5c';const s=_waG(g);_fit(x,s,half-bw-24,26,'600');x.fillText(s,xx+bw+12,my+9)})}
+  else{const [bg,fg]=_EV_COL[z.tipo]||['#e2e8f0','#334155'];_fit(x,z.lab,300,21,'bold');const bw=Math.min(324,x.measureText(z.lab).width+24);x.fillStyle=bg;_rr(x,X+124,yy+12,bw,34,17);x.fill();x.fillStyle=fg;x.textAlign='center';x.fillText(z.lab,X+124+bw/2,my+7);
+   if(z.g){x.textAlign='left';x.fillStyle='#0d2b5c';const s=_waG(z.g);_fit(x,s,W-464-24,26,'600');x.fillText(s,X+464,my+9)}}
+  yy+=58});return y+H}
+function _imgEventi(e,tit,R,vuoto,extra){const gi=_partG(e),H=250+(extra?extra.h:0)+_imgRigheH(R)+40+90,{c,x}=_imgTela(H);
+ let y=_imgTesta(x,(gi?gi+'a giornata - ':'')+(e.competizione||''),tit,matchLabel(e)+'  '+(e.golCasa||0)+' - '+(e.golTrasferta||0)+'  -  '+fmtDate(e.data))+4;
+ if(extra)y=extra.draw(x,y);_imgRighe(x,y,R,vuoto);_imgPiede(x,H);return c}
+function condividiEventiWA(id){const e=fE(id);if(!e)return;const R=_waRighe(e,1,0);
+ _imgCondividi(_imgEventi(e,'EVENTI',R,'Nessun evento registrato'),'eventi-'+(e.data||'')+'.png',_waTesta(e,'EVENTI')+(R.length?_waRigheTesto(e,R):'\n\nNessun evento registrato'))}
+function condividiSostWA(id){const e=fE(id);if(!e)return;const R=_waRighe(e,0,1);
+ _imgCondividi(_imgEventi(e,'SOSTITUZIONI',R,'Nessuna sostituzione'),'sostituzioni-'+(e.data||'')+'.png',_waTesta(e,'SOSTITUZIONI')+(R.length?_waRigheTesto(e,R):'\n\nNessuna sostituzione'))}
+function condividiInfoWA(id){const e=fE(id);if(!e)return;const R=_waRighe(e,1,1),gi=_partG(e);
+ const I=[['Data',fmtDateLong(e.data)+(e.ora?' - ore '+e.ora:'')],['Luogo',e.luogo||'-'],['Avversario',(e.avversario||'-')+(e.casaTrasferta?' ('+e.casaTrasferta+')':'')],['Competizione',e.competizione||'-'],['Risultato',(e.golCasa||0)+' - '+(e.golTrasferta||0)]];
+ const m=document.createElement('canvas').getContext('2d');m.font=`26px ${IMG_F}`;const L=I.map(([k,v])=>[k,_imgWrap(m,String(v),IMG_W-80-260-40)]),hI=30+L.reduce((s,[k,r])=>s+r.length*36+18,0);
+ const extra={h:hI+20+66,draw:(x,y)=>{x.fillStyle='#fff';_rr(x,40,y,IMG_W-80,hI,24);x.fill();let yy=y+20;
+  L.forEach(([k,r])=>{x.textAlign='left';x.fillStyle='#64748b';x.font=`bold 22px ${IMG_F}`;x.fillText(k.toUpperCase(),70,yy+30);x.fillStyle='#0d2b5c';x.font=`${k==='Risultato'?'bold ':''}26px ${IMG_F}`;r.forEach((s,j)=>x.fillText(s,300,yy+30+j*36));yy+=r.length*36+18});
+  y+=hI+20;x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 24px ${IMG_F}`;x.fillText('CRONOLOGIA PARTITA',70,y+40);return y+66}};
+ let t='*INFO PARTITA - '+matchLabel(e)+'*\n'+evL(e)+(gi?' - '+gi+'a giornata':'')+'\n'+fmtDateLong(e.data)+(e.ora?' - ore '+e.ora:'')+'\nLuogo: '+(e.luogo||'-')+'\nAvversario: '+(e.avversario||'-')+(e.casaTrasferta?' ('+e.casaTrasferta+')':'')+(e.competizione?'\nCompetizione: '+e.competizione:'')+'\n\n*RISULTATO: '+(e.golCasa||0)+' - '+(e.golTrasferta||0)+'*';
+ if(R.length)t+='\n\n*Cronologia partita*'+_waRigheTesto(e,R);
+ _imgCondividi(_imgEventi(e,'INFO PARTITA',R,'Nessun evento registrato',extra),'info-'+(e.data||'')+'.png',t)}
+const _WA_ST=[['Tiri totali','tiri',1],['Tiri in porta','porta',1],['Tiri fuori','fuori',1],['Legni','legni'],['Tiri respinti','respinti'],["Calci d'angolo",'angoli',1],['Falli commessi','falli',1],['Fuorigioco','fuorigioco',1],['Gol annullati','annullati'],['Parate','parate',1],['Rigori','rigori'],['Ammonizioni','gialli'],['Espulsioni','rossi'],['Sostituzioni','sost',1]];
+function _waStatsDati(e){const {n,l}=partStats(e),casa=e.casaTrasferta!=='trasferta',av=(e.avversario||'Avversario').trim(),S=casa?[{nome:CASA_NOME,v:n,noi:1},{nome:av,v:l,noi:0}]:[{nome:av,v:l,noi:0},{nome:CASA_NOME,v:n,noi:1}];
+ return {S,rows:_WA_ST.filter(([lab,k,s])=>s||S[0].v[k]||S[1].v[k]),pr:v=>v.tiri?Math.round(v.porta/v.tiri*100)+'%':'-'}}
+function _imgStats(e){const {S,rows,pr}=_waStatsDati(e),marc=_marcLista(e),gi=_partG(e),noAvv=!(e.eventiAvv||[]).length;
+ const H=250+236+(marc.length?66+marc.length*38:0)+66+rows.length*66+66+(noAvv?44:0)+40+90,{c,x}=_imgTela(H);
+ let y=_imgTesta(x,(gi?gi+'a giornata - ':'')+(e.competizione||''),'STATISTICHE',fmtDateLong(e.data)+(e.luogo?' - '+e.luogo:''))+4;
+ x.fillStyle='#fff';_rr(x,40,y,IMG_W-80,206,26);x.fill();x.textAlign='center';x.fillStyle='#0d2b5c';x.font=`800 100px ${IMG_F}`;x.fillText((e.golCasa||0)+' - '+(e.golTrasferta||0),IMG_W/2,y+138);
+ const nm=(s,noi,xx)=>{x.fillStyle=noi?'#dc2626':'#0d2b5c';_fit(x,s.toUpperCase(),290,34,'800');x.fillText(s.toUpperCase(),xx,y+118)};nm(S[0].nome,S[0].noi,205);nm(S[1].nome,S[1].noi,IMG_W-205);y+=236;
+ const tit=s=>{x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 24px ${IMG_F}`;x.fillText(s,70,y+40);y+=66};
+ if(marc.length){tit('MARCATORI');marc.forEach(m=>{x.fillStyle=m.noi?'#ef4444':'#cbd5e1';x.beginPath();x.arc(80,y-8,7,0,Math.PI*2);x.fill();x.fillStyle='#fff';x.textAlign='left';x.font=`26px ${IMG_F}`;x.fillText(m.t,100,y);y+=38})}
+ tit('STATISTICHE');const X=70,W=IMG_W-140,cL=S[0].noi?'#ef4444':'#93c5fd',cR=S[1].noi?'#ef4444':'#93c5fd';
+ rows.forEach(([lab,k])=>{const a=S[0].v[k]||0,b=S[1].v[k]||0,pa=a+b?a/(a+b):.5;x.font=`bold 30px ${IMG_F}`;x.fillStyle='#fff';x.textAlign='left';x.fillText(String(a),X,y);x.textAlign='right';x.fillText(String(b),X+W,y);
+  x.textAlign='center';x.fillStyle='#cbd5e1';x.font=`bold 20px ${IMG_F}`;x.fillText(lab.toUpperCase(),IMG_W/2,y-4);
+  x.fillStyle='rgba(255,255,255,.18)';_rr(x,X,y+12,W,10,5);x.fill();x.fillStyle=cL;_rr(x,X,y+12,W*pa,10,5);x.fill();x.fillStyle=cR;_rr(x,X+W*pa,y+12,W*(1-pa),10,5);x.fill();y+=66});
+ x.font=`bold 30px ${IMG_F}`;x.fillStyle='#fff';x.textAlign='left';x.fillText(pr(S[0].v),X,y);x.textAlign='right';x.fillText(pr(S[1].v),X+W,y);x.textAlign='center';x.fillStyle='#cbd5e1';x.font=`bold 20px ${IMG_F}`;x.fillText('PRECISIONE AL TIRO',IMG_W/2,y-4);y+=66;
+ if(noAvv){x.fillStyle='rgba(255,255,255,.7)';x.font=`italic 22px ${IMG_F}`;x.textAlign='center';x.fillText("Eventi dell'avversario non registrati: i suoi numeri sono incompleti",IMG_W/2,y)}
+ _imgPiede(x,H);return c}
+function condividiStatsWA(id){const e=fE(id);if(!e)return;const {S,rows,pr}=_waStatsDati(e),m=_marcLista(e);
+ let t=_waTesta(e,'STATISTICHE');if(m.length)t+='\n\n*Marcatori*\n'+m.map(z=>z.t.replace('   ',' ')).join('\n');
+ t+='\n\n*'+S[0].nome+' - '+S[1].nome+'*';rows.forEach(([lab,k])=>{t+='\n'+lab+': '+(S[0].v[k]||0)+' - '+(S[1].v[k]||0)});t+='\nPrecisione al tiro: '+pr(S[0].v)+' - '+pr(S[1].v);
+ _imgCondividi(_imgStats(e),'statistiche-'+(e.data||'')+'.png',t)}
 /* ---- scheda giocatore ---- */
 function _votiGioc(gId){return DATA.eventi.filter(isP).filter(ev=>_minGioc(ev,gId)!==null).sort((a,b)=>(a.data||'').localeCompare(b.data||'')).map(ev=>({ev,lab:_partLab(ev),v:(ev.voti||{})[gId],m:_minGioc(ev,gId)}))}
 function _medieGioc(gId){const s=stats(gId),VG=_votiGioc(gId),vv=VG.filter(x=>x.v!=null);return{s,VG,mv:vv.length?vv.reduce((t,x)=>t+x.v,0)/vv.length:null,nv:vv.length,mm:s.presenze?Math.round(s.minuti/s.presenze):0}}
@@ -1541,9 +1607,9 @@ ${sostituzioni.map((s,i)=>{const gI=fG(s.in),gO=fG(s.out);return `<div class="co
 </div>
 <h4 style="color:var(--b1);margin-bottom:12px">Cronologia partita (minuto per minuto)</h4>
 <div>${tlHtml}</div>
-<div style="margin-top:14px;display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openEventoModal('${id}')">Modifica info</button><button class="btn btn-wa btn-sm" onclick="shareEventoWA('${id}')">Condividi WA</button></div>
+<div style="margin-top:14px;display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openEventoModal('${id}')">Modifica info</button><button class="btn btn-wa btn-sm" onclick="condividiInfoWA('${id}')">Condividi WA</button></div>
 </div>`;
-openModal('Dettagli Partita - '+fmtDate(e.data)+' - '+matchLabel(e),body,`<button class="btn btn-secondary" onclick="stampaPartita('${id}')">Stampa</button> <button class="btn btn-wa" onclick="condividiPartitaWA('${id}')">WhatsApp</button> <button class="btn btn-primary" onclick="closeModal()">Chiudi</button>`,{large:true});_partRestore(id,_pScroll)}
+openModal('Dettagli Partita - '+fmtDate(e.data)+' - '+matchLabel(e),body,`<button class="btn btn-secondary" onclick="stampaPartita('${id}')">Stampa</button> <button class="btn btn-wa" id="wa-part-btn" onclick="condividiPartitaTabWA('${id}')">WhatsApp: Formazione</button> <button class="btn btn-primary" onclick="closeModal()">Chiudi</button>`,{large:true});_partRestore(id,_pScroll)}
 function updMod(id){const e=fE(id);if(_partBloccata(e))return;e.modulo=document.getElementById('mod-sel').value;const avevo=(e.formazione||[]).slice();delete e.formazionePos;e.formazione=avevo;_partPos(e);_partSync(e);saveData();openPartitaDettagli(id);toast('Modulo aggiornato')}
 function addTit(id,gId){if(!gId)return;const e=fE(id);if(!e.formazione)e.formazione=[];if(e.formazione.length>=11){toast('Max 11 titolari',true);return}e.formazione.push(gId);saveData();openPartitaDettagli(id)}
 function rmTit(id,gId){const e=fE(id);e.formazione=(e.formazione||[]).filter(x=>x!==gId);saveData();openPartitaDettagli(id)}
