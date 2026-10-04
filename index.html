@@ -228,6 +228,27 @@ tr.clickable{cursor:pointer}
 .voce-detto{flex-basis:100%;font-size:12px;color:var(--muted)}
 .voce-note{color:#b45309;font-weight:600}
 .voce-tag{font-size:10px;font-weight:700;color:#0d2b5c;background:#e0e7f5;border-radius:6px;padding:1px 5px;margin-left:4px}
+/* CAMPIONATO_WA_v1 */
+.camp-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.camp-tit{font-weight:700;color:var(--b1);font-size:15px}
+.camp-sub{font-size:12px;color:var(--muted)}
+.camp-pros{background:var(--b1);color:#fff;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;line-height:1.5;border-left:5px solid var(--r2)}
+.camp-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;color:var(--b1);flex-wrap:wrap}
+.camp-nota{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+.camp-cnt{float:right;font-weight:400;font-size:11px;color:var(--muted);margin-top:3px}
+.camp-rip{font-size:12px;color:var(--muted);padding:6px 4px}
+.camp-prog-t{font-size:12px;font-weight:700;color:var(--b1);text-transform:uppercase;letter-spacing:.04em;margin-top:12px}
+.camp-tab.small th,.camp-tab.small td{padding:5px 6px;font-size:12px}
+.camp-tab td.var{font-size:11px;font-weight:700;color:#94a3b8;white-space:nowrap}.camp-tab td.var.su{color:var(--ok)}.camp-tab td.var.giu{color:var(--r2)}
+.voti-tab td,.voti-tab th{padding:7px 8px}
+.voto-in{width:70px;font-size:17px;font-weight:700;text-align:center;padding:6px;border:2px solid var(--b3);border-radius:8px;color:var(--b1)}
+.voti-pie{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;font-weight:600;color:var(--b1)}
+.voti-strip{background:var(--b4);border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.voti-chips{display:flex;flex-wrap:wrap;gap:6px}
+.voto-chip{display:inline-flex;flex-direction:column;align-items:center;min-width:52px;padding:4px 8px;border-radius:8px;background:#fff;border:1px solid var(--border);cursor:pointer;line-height:1.2}
+.voto-chip span{font-size:10px;color:var(--muted);font-weight:600}.voto-chip b{font-size:16px}
+.voto-chip.alto b{color:var(--ok)}.voto-chip.ok b{color:var(--b3)}.voto-chip.basso b{color:var(--r2)}.voto-chip.sv b{color:var(--muted);font-size:12px}
+.voti-medie{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--b1)}
 /* CRONACA_STATS_v1 */
 .cron-head{background:var(--b1);color:#fff;border-radius:8px;padding:14px 16px;margin-bottom:12px}
 .cron-tit{font-size:20px;font-weight:700;line-height:1.2}
@@ -332,7 +353,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.04a - cronaca, statistiche partita, campionato</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.04b - Tuttocampo, classifica progressiva, voti, immagini WhatsApp</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -671,7 +692,7 @@ document.getElementById('view-rosa').innerHTML=`${DATA.giocatori.length?'':'<div
 ${filt.length===0?'<div class="empty-state">Nessun giocatore</div>':_rosaView==='cards'?`<div class="grid grid-3">${filt.map(g=>`<div class="player-card" onclick="openGiocatoreModal('${g.id}')"><div class="player-photo">${g.foto?`<img src="${esc(g.foto)}">`:`${esc(g.nome[0]||'')}${esc(g.cognome[0]||'')}`}<div class="player-number">${g.numero||'-'}</div></div><div class="player-info"><div class="player-name">${esc(fn(g))}</div><div class="player-meta"><span class="badge ${rBadge(g.ruolo)}">${g.ruolo}</span><span>${age(g.dataNascita)} anni</span></div></div></div>`).join('')}</div>`:`<div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>#</th><th>Cognome</th><th>Nome</th><th>Ruolo</th><th>Eta</th><th>Cert.Scad</th><th>Stato</th></tr></thead><tbody>${filt.map(g=>`<tr class="clickable" onclick="openGiocatoreModal('${g.id}')"><td><strong>${g.numero||'-'}</strong></td><td><strong>${esc(g.cognome)}</strong></td><td>${esc(g.nome)}</td><td><span class="badge ${rBadge(g.ruolo)}">${g.ruolo}</span></td><td>${age(g.dataNascita)}</td><td>${g.certScadenza?fmtDate(g.certScadenza):'<span class="badge badge-danger">Manca</span>'}</td><td><span class="badge badge-${g.stato==='attivo'?'ok':'warn'}">${g.stato||'attivo'}</span></td></tr>`).join('')}</tbody></table></div>`}`}
 
 function openGiocatoreModal(id){const g=id?fG(id):null;const isNew=!g;
-const body=`<div class="tabs"><div class="tab active" onclick="switchTab(this,'tab-anag')">Anagrafica</div><div class="tab" onclick="switchTab(this,'tab-cont')">Contatti</div><div class="tab" onclick="switchTab(this,'tab-fisico')">Fisico</div><div class="tab" onclick="switchTab(this,'tab-doc')">Documenti</div><div class="tab" onclick="switchTab(this,'tab-tec')">Note</div>${!isNew?'<div class="tab" onclick="switchTab(this,\'tab-stat\')">Statistiche</div>':''}</div>
+const body=`${g?votiStripHTML(g):''}<div class="tabs"><div class="tab active" onclick="switchTab(this,'tab-anag')">Anagrafica</div><div class="tab" onclick="switchTab(this,'tab-cont')">Contatti</div><div class="tab" onclick="switchTab(this,'tab-fisico')">Fisico</div><div class="tab" onclick="switchTab(this,'tab-doc')">Documenti</div><div class="tab" onclick="switchTab(this,'tab-tec')">Note</div>${!isNew?'<div class="tab" onclick="switchTab(this,\'tab-stat\')">Statistiche</div>':''}</div>
 <form id="fg" onsubmit="event.preventDefault();saveGiocatore('${id||''}')">
 <div id="tab-anag" class="tab-pane">
 <div class="form-row-3"><div class="form-group"><label class="form-label">Nome*</label><input class="form-input" name="nome" value="${esc(g?.nome||'')}" required></div><div class="form-group"><label class="form-label">Cognome*</label><input class="form-input" name="cognome" value="${esc(g?.cognome||'')}" required></div><div class="form-group"><label class="form-label">N. Maglia</label><input type="number" class="form-input" name="numero" value="${g?.numero||''}"></div></div>
@@ -708,11 +729,11 @@ ${g?`<div id="tab-stat" class="tab-pane" style="display:none">${renderGiocatoreS
 const footer=`${g?`<button class="btn btn-danger" onclick="if(confirm('Eliminare ${esc(fn(g))}?')){deleteGiocatore('${g.id}')}">Elimina</button><button class="btn btn-wa" onclick="shareGiocatoreWA('${g.id}')">Condividi Scheda WA</button>`:''}<button class="btn btn-secondary" onclick="resetForm('fg')">Reset</button><button class="btn btn-secondary" onclick="closeModal()">Annulla</button><button class="btn btn-primary" onclick="document.getElementById('fg').requestSubmit()">Salva</button>`;
 openModal(g?fn(g):'Nuovo Giocatore',body,footer,{large:true})}
 function waPhone(p,m){const u=waLinkPhone(p,m);if(u)window.open(u,'_blank')}
-function renderGiocatoreStats(g){const s=stats(g.id),a=attendance(g.id,isA),pp=attendance(g.id,isP);
+function renderGiocatoreStats(g){_imgPronta(g.foto);_imgPronta(_logoSrc());const {s,VG,mv,nv,mm}=_medieGioc(g.id),a=attendance(g.id,isA),pp=attendance(g.id,isP);
 const box=(l,v,sub)=>`<div class="stat"><div class="stat-label">${l}</div><div class="stat-value">${v}</div>${sub?`<div class="stat-sub">${sub}</div>`:''}</div>`;
-let h=`<div class="grid grid-3">${box('Presenze',s.presenze,s.panchinaNonEntrato?s.panchinaNonEntrato+' in panchina senza entrare':'')}${box('Minuti',s.minuti)}${box('Gol',s.gol,[s.rigori?s.rigori+' su rigore':'',s.golTesta?s.golTesta+' di testa':''].filter(Boolean).join(', '))}${box('Tiri',s.tiriTot,`${s.tiriPorta} in porta, ${s.tiriFuori} fuori${s.legni?', '+s.legni+(s.legni===1?' legno':' legni'):''}${s.tiriRespinti?', '+s.tiriRespinti+(s.tiriRespinti===1?' respinto':' respinti'):''}`)}${box('Precisione al tiro',s.tiriTot?Math.round(s.tiriPorta/s.tiriTot*100)+'%':'-','tiri in porta su tiri totali, gol compresi')}${box('Assist',s.assist)}${box('Falli commessi',s.falli)}${box('Fuorigioco',s.fuorigioco,s.golAnnullati?s.golAnnullati+(s.golAnnullati===1?' gol annullato':' gol annullati'):'')}${box('Cartellini',s.gialli+'G '+s.rossi+'R')}${box('%Allen',a.pct+'%')}${box('%Part',pp.pct+'%')}${s.angoli?box("Calci d'angolo battuti",s.angoli):''}</div>`;
-const P=DATA.eventi.filter(isP).filter(ev=>_minGioc(ev,g.id)!==null||(ev.panchina||[]).includes(g.id)).sort((x,y)=>(x.data||'').localeCompare(y.data||''));
-if(P.length)h+=`<h4 style="color:var(--b1);margin:18px 0 8px">Partita per partita</h4><div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>Data</th><th>Partita</th><th>Min</th><th>Gol</th><th>Tiri</th><th>In porta</th><th>Falli</th></tr></thead><tbody>${P.map(ev=>{const mm=_minGioc(ev,g.id),E=(ev.eventiPartita||[]).filter(x=>x.giocatoreId===g.id),gl=E.filter(x=>x.tipo==='gol'||x.tipo==='rigore').length,ti=E.filter(x=>EV_TIRI.includes(x.tipo)),po=ti.filter(x=>x.esito==='porta').length+gl;return `<tr class="clickable" onclick="closeModal();openPartitaDettagli('${ev.id}')"><td>${esc(fmtDate(ev.data))}</td><td>${esc(matchLabel(ev))}<br><span style="font-size:11px;color:var(--muted)">${ev.golCasa||0} - ${ev.golTrasferta||0}</span></td><td>${mm===null?'pan.':mm}</td><td>${gl||'-'}</td><td>${ti.length+gl||'-'}</td><td>${po||'-'}</td><td>${E.filter(x=>x.tipo==='fallo').length||'-'}</td></tr>`}).join('')}</tbody></table></div>`;
+let h=`<div class="grid grid-3">${box('Presenze',s.presenze,s.panchinaNonEntrato?s.panchinaNonEntrato+' in panchina senza entrare':'')}${box('Minuti',s.minuti,s.presenze?'media '+mm+"' a partita":'')}${box('Media voto',mv!=null?_fmtVoto(mv):'-',nv?nv+(nv===1?' partita':' partite')+' con voto':'')}${box('Gol',s.gol,[s.rigori?s.rigori+' su rigore':'',s.golTesta?s.golTesta+' di testa':''].filter(Boolean).join(', '))}${box('Tiri',s.tiriTot,`${s.tiriPorta} in porta, ${s.tiriFuori} fuori${s.legni?', '+s.legni+(s.legni===1?' legno':' legni'):''}${s.tiriRespinti?', '+s.tiriRespinti+(s.tiriRespinti===1?' respinto':' respinti'):''}`)}${box('Precisione al tiro',s.tiriTot?Math.round(s.tiriPorta/s.tiriTot*100)+'%':'-','tiri in porta su tiri totali, gol compresi')}${box('Assist',s.assist)}${box('Falli commessi',s.falli)}${box('Fuorigioco',s.fuorigioco,s.golAnnullati?s.golAnnullati+(s.golAnnullati===1?' gol annullato':' gol annullati'):'')}${box('Cartellini',s.gialli+'G '+s.rossi+'R')}${box('%Allen',a.pct+'%')}${box('%Part',pp.pct+'%')}${s.angoli?box("Calci d'angolo battuti",s.angoli):''}</div>`;
+if(VG.length)h+=`<h4 style="color:var(--b1);margin:18px 0 8px">Partita per partita</h4><div class="card" style="padding:0;overflow:auto"><table><thead><tr><th>G</th><th>Partita</th><th>Min</th><th>Gol</th><th>Tiri</th><th>In porta</th><th>Voto</th></tr></thead><tbody>${VG.map(z=>{const ev=z.ev,E=(ev.eventiPartita||[]).filter(x=>x.giocatoreId===g.id),gl=E.filter(x=>x.tipo==='gol'||x.tipo==='rigore').length,ti=E.filter(x=>EV_TIRI.includes(x.tipo)),po=ti.filter(x=>x.esito==='porta').length+gl;return `<tr class="clickable" onclick="closeModal();openPartitaDettagli('${ev.id}')"><td><b>${esc(z.lab)}</b></td><td>${esc(matchLabel(ev))}<br><span style="font-size:11px;color:var(--muted)">${esc(fmtDate(ev.data))} - ${ev.golCasa||0} - ${ev.golTrasferta||0}</span></td><td>${z.m}</td><td>${gl||'-'}</td><td>${ti.length+gl||'-'}</td><td>${po||'-'}</td><td><b>${z.v!=null?_fmtVoto(z.v):'s.v.'}</b></td></tr>`}).join('')}</tbody></table></div>`;
+h+=`<div style="margin-top:12px"><button type="button" class="btn btn-wa btn-sm" onclick="shareGiocatoreWA('${g.id}')">Condividi la scheda su WhatsApp</button></div>`;
 return h}
 /* FOTO_PATCH_v1 */
 function fotoRender(u){var p=document.getElementById('fotoPrev');if(!p)return;if(u){p.innerHTML='<img src="'+u+'" style="width:100%;height:100%;object-fit:cover">';}else{var f=document.getElementById('fg');var n=(f&&f.elements.nome?f.elements.nome.value:'')||'';var c=(f&&f.elements.cognome?f.elements.cognome.value:'')||'';p.textContent=(n[0]||'')+(c[0]||'');}}
@@ -793,7 +814,7 @@ function toggleConfermaPresenze(eId){const ev=fE(eId);if(ev.presenzeConfermate){
 function shareTopGolWA(){const st=DATA.giocatori.map(g=>({g,s:stats(g.id)})).filter(x=>x.s.gol>0).sort((a,b)=>b.s.gol-a.s.gol);if(!st.length){toast('Nessun gol registrato',true);return}const t=`*CLASSIFICA MARCATORI - Calenzano ${DATA.squadra.categoria}*\n\n${st.map((x,i)=>`${i+1}. ${fn(x.g)} - ${x.s.gol} gol`).join('\n')}\n\nMister Roberto`;shareWAGruppo(t)}
 function shareTopAssWA(){const st=DATA.giocatori.map(g=>({g,s:stats(g.id)})).filter(x=>x.s.assist>0).sort((a,b)=>b.s.assist-a.s.assist);if(!st.length){toast('Nessun assist',true);return}const t=`*CLASSIFICA ASSIST - Calenzano ${DATA.squadra.categoria}*\n\n${st.map((x,i)=>`${i+1}. ${fn(x.g)} - ${x.s.assist} ass.`).join('\n')}\n\nMister Roberto`;shareWAGruppo(t)}
 function shareProssimiWA(){const now=new Date();const fu=DATA.eventi.filter(e=>new Date(e.data+'T'+(e.ora||'00:00'))>=now).sort((a,b)=>(a.data+(a.ora||'')).localeCompare(b.data+(b.ora||''))).slice(0,7);if(!fu.length){toast('Nessun evento futuro',true);return}const t=`*PROSSIMI IMPEGNI - Calenzano ${DATA.squadra.categoria}*\n\n${fu.map(e=>`${fmtDate(e.data)} ${e.ora||''} - ${evL(e)}${e.avversario?' vs '+e.avversario:''}${e.luogo?'\n   '+e.luogo:''}`).join('\n\n')}\n\nMister Roberto`;shareWAGruppo(t)}
-function shareGiocatoreWA(gId){const g=fG(gId);if(!g)return;const s=stats(gId),a=attendance(gId,isA),pp=attendance(gId,isP);const t=`*SCHEDA ${fn(g).toUpperCase()}*\n${g.ruolo} - n. ${g.numero||'-'}\nNato il ${fmtDate(g.dataNascita)} (${age(g.dataNascita)} anni)\nPiede: ${g.piede||'-'}\n\n*Statistiche stagione:*\nPresenze partite: ${s.presenze} (${pp.pct}%)\nMinuti: ${s.minuti}\nGol: ${s.gol} - Assist: ${s.assist}\nTiri: ${s.tiri} (${s.tiriDx} dx / ${s.tiriSx} sx / ${s.tiriTesta} testa)\nCartellini: ${s.gialli}G ${s.rossi}R\nPresenze allenamenti: ${a.pct}%\n\nMister Roberto`;shareWAGruppo(t)}
+
 function shareRosaWA(){const gi=DATA.giocatori.slice().sort((a,b)=>(a.numero||99)-(b.numero||99));const t=`*ROSA Calenzano ${DATA.squadra.categoria} ${DATA.squadra.stagione}*\n\n${gi.map(g=>`${g.numero||'-'} ${fn(g)} (${g.ruolo})`).join('\n')}\n\nMister Roberto`;shareWAGruppo(t)}
 function shareTatticaWA(){const positions=MODULI[_tatModulo];const lines=positions.map((p,i)=>{const g=fG(_tatAss[i]);return `${RUOLI[p.r]?.label||p.r}: ${g?fn(g):'(vuoto)'}${g?.numero?' n.'+g.numero:''}`});const t=`*FORMAZIONE ${_tatModulo} - Calenzano ${DATA.squadra.categoria}*\n\n${lines.join('\n')}${DATA.squadra.noteTattiche?'\n\n*Note tattiche:*\n'+DATA.squadra.noteTattiche:''}\n\nMister Roberto`;shareWAGruppo(t)}
 function shareEsercizioWA(id){const e=DATA.esercizi.find(x=>x.id===id);if(!e)return;const t=`*ESERCIZIO: ${e.titolo}*\n${e.categoria?'Categoria: '+e.categoria+'\n':''}${e.durata?'Durata: '+e.durata+'\n':''}${e.giocatori?'Giocatori: '+e.giocatori+'\n':''}${e.obiettivo?'\n*Obiettivo:* '+e.obiettivo+'\n':''}${e.descrizione?'\n*Svolgimento:*\n'+e.descrizione+'\n':''}${e.materiale?'\n*Materiale:* '+e.materiale:''}\n\nMister Roberto`;shareWAGruppo(t)}
@@ -1203,8 +1224,9 @@ function statsTabHTML(e,id){const {n,l}=partStats(e),casa=e.casaTrasferta!=='tra
  const pr=x=>x.tiri?Math.round(x.porta/x.tiri*100)+'%':'-';
  h+=`<div class="st-row"><div class="st-lab"><b>${pr(S[0].v)}</b><span>Precisione al tiro</span><b>${pr(S[1].v)}</b></div></div>`;
  h+=`<p style="font-size:11px;color:var(--muted);margin-top:12px">I tiri in porta comprendono i gol; le parate sono i tiri in porta dell'avversario non finiti in rete. Possesso palla non rilevato.${(e.eventiAvv||[]).length?'':' Eventi dell\'avversario non registrati: i suoi numeri sono incompleti.'}</p>`;
+ h+=`<div style="margin-top:12px"><button class="btn btn-wa btn-sm" onclick="cronacaShare('${id}')">Condividi su WhatsApp</button></div>`;
  return h}
-function cronacaTabHTML(e,id){const c=e.cronaca;let h='';
+function cronacaTabHTML(e,id){_imgPronta(_logoSrc());const c=e.cronaca;let h='';
  if(!c)h+='<div class="empty-state">Nessuna cronaca per questa partita.<br><span style="font-size:12px">Dopo la partita mandi gli appunti a Claude, che prepara la cronaca sul PC: qui sotto la importi.</span></div>';
  else{h+=`<div class="cron-head"><div class="cron-tit">${esc(c.titolo||matchLabel(e))}</div>${c.sottotitolo?`<div class="cron-sub">${esc(c.sottotitolo)}</div>`:''}</div>`;
   if(c.intro)h+=`<p class="cron-intro">${esc(c.intro)}</p>`;
@@ -1214,13 +1236,9 @@ function cronacaTabHTML(e,id){const c=e.cronaca;let h='';
    h+=`<div class="cron-riga${r.gol?' gol':''}${r.sq==='avv'?' avv':''}"><span class="cron-min">${r.m!=null?esc(String(r.m))+"'":''}</span><span>${esc(r.testo)}${r.gol&&r.ris?` <span class="cron-ris">${esc(r.ris)}</span>`:''}</span></div>`});
   if(c.sintesi)h+=`<p class="cron-sintesi">${esc(c.sintesi)}</p>`;
   if((c.note||[]).length)h+=`<div class="cron-note"><strong>Note</strong><ul>${c.note.map(x=>'<li>'+esc(x)+'</li>').join('')}</ul></div>`;
-  h+=`<div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-wa btn-sm" onclick="cronacaShare('${id}')">Condividi cronaca</button></div>`}
+  h+=`<div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-wa btn-sm" onclick="cronacaShare('${id}')">Condividi su WhatsApp</button></div>`}
  h+=`<div class="cron-pc">${_pcUrl()?`<button class="btn btn-secondary btn-sm" onclick="cronacaDalPC('${id}')">${c?'Aggiorna dal PC':'Importa dal PC'}</button>`:`<button class="btn btn-secondary btn-sm" onclick="pcImposta('${id}')">Imposta l'indirizzo del PC</button>`}${e._primaCronaca?` <button class="btn btn-secondary btn-sm" onclick="cronacaAnnulla('${id}')">Annulla importazione</button>`:''} <span id="cron-stato">${c&&c.importata?'Importata il '+esc(fmtDate(c.importata.slice(0,10))):''}</span></div>`;
  return h}
-function cronacaShare(id){const e=fE(id),c=e&&e.cronaca;if(!c)return;let t='*'+(c.titolo||matchLabel(e))+'*'+(c.sottotitolo?'\n'+c.sottotitolo:'');if(c.intro)t+='\n\n'+c.intro;let t0=0;
- (c.righe||[]).forEach(r=>{if(r.t!==t0){t0=r.t;t+='\n\n*'+(r.t===1?'PRIMO TEMPO':'SECONDO TEMPO')+'*'}t+='\n'+(r.fine?'*'+r.testo+'*':(r.m!=null?r.m+"' ":'')+r.testo+(r.gol&&r.ris?' ('+r.ris+')':''))});
- if(c.sintesi)t+='\n\n'+c.sintesi;
- if(navigator.share){navigator.share({text:t}).catch(()=>{})}else if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>toast('Cronaca copiata: incollala dove vuoi'),()=>toast('Copia non riuscita',true))}}
 function _cronStato(msg,err){const s=document.getElementById('cron-stato');if(s){s.textContent=msg;s.style.color=err?'var(--r2)':''}else if(err)toast(msg,true)}
 function _apriTab(pane){const t=[...document.querySelectorAll('.modal .tab')].find(x=>(x.getAttribute('onclick')||'').includes("'"+pane+"'"));if(t)t.click()}
 async function cronacaDalPC(id){const e=fE(id);if(!e)return;_cronStato('Cerco la cronaca sul PC...');
@@ -1240,7 +1258,7 @@ async function _cronacaImporta(nome,id){const j=await _pcFetch('/cronaca?nome='+
  if(nuova){e={id:uid(),tipo:'partita',data:d.partita.data,ora:'',luogo:d.partita.luogo||'',durata:2*(+d.partita.tempo||35),avversario:d.partita.avversario||'',casaTrasferta:d.partita.casaTrasferta||'casa',competizione:'Campionato'};DATA.eventi.push(e)}
  _cronacaApplica(e,d,nome,byN);saveData();closeModal();openPartitaDettagli(e.id);_apriTab('tab-cron');toast('Cronaca importata: '+d.cronaca.titolo)}
 function _cronacaApplica(e,d,nome,byN){const P=d.partita,T=+P.tempo||35,am=x=>(x.t-1)*T+x.m,gid=n=>n==null?null:(byN[String(n)]||null);
- e._primaCronaca=JSON.stringify({formazione:e.formazione,panchina:e.panchina,formazionePos:e.formazionePos,sostituzioni:e.sostituzioni,eventiPartita:e.eventiPartita,indisponibili:e.indisponibili,golCasa:e.golCasa,golTrasferta:e.golTrasferta,completato:e.completato,eventiAvv:e.eventiAvv,sostAvv:e.sostAvv,cronaca:e.cronaca,giornata:e.giornata,presenze:(DATA.presenze||{})[e.id]});
+ e._primaCronaca=JSON.stringify({formazione:e.formazione,panchina:e.panchina,formazionePos:e.formazionePos,sostituzioni:e.sostituzioni,eventiPartita:e.eventiPartita,indisponibili:e.indisponibili,golCasa:e.golCasa,golTrasferta:e.golTrasferta,completato:e.completato,eventiAvv:e.eventiAvv,sostAvv:e.sostAvv,cronaca:e.cronaca,giornata:e.giornata,presenze:(DATA.presenze||{})[e.id],voti:e.voti});
  if(!e.avversario)e.avversario=P.avversario||'';if(P.casaTrasferta)e.casaTrasferta=P.casaTrasferta;if(!e.luogo&&P.luogo)e.luogo=P.luogo;if(P.giornata)e.giornata=P.giornata;
  const casa=e.casaTrasferta!=='trasferta';e.golCasa=casa?P.ris.noi:P.ris.loro;e.golTrasferta=casa?P.ris.loro:P.ris.noi;e.completato=true;
  const F=d.formazione.map(gid),stesso=(e.formazione||[]).length===F.length&&F.every(x=>(e.formazione||[]).includes(x));
@@ -1253,9 +1271,10 @@ function _cronacaApplica(e,d,nome,byN){const P=d.partita,T=+P.tempo||35,am=x=>(x
  e.sostAvv=(A.sostituzioni||[]).map(s=>({out:s.out,in:s.in,minuto:am(s),t:s.t}));
  DATA.presenze=DATA.presenze||{};const pres=DATA.presenze[e.id]=Object.assign({},DATA.presenze[e.id]||{});[...e.formazione,...e.panchina].forEach(g=>{if(g&&pres[g]===undefined)pres[g]='P'});
  (d.indisponibili||[]).forEach(x=>{const g=gid(x.numero);if(g&&pres[g]===undefined)pres[g]=/infort/i.test(x.motivo||'')?'I':'A'});
+ if(d.voti){e.voti=e.voti||{};Object.entries(d.voti).forEach(([n,v])=>{const g=gid(n),x=parseFloat(String(v).replace(',','.'));if(g&&!isNaN(x)&&x>=1&&x<=10&&e.voti[g]==null)e.voti[g]=Math.round(x*4)/4})}
  e.cronaca=Object.assign({},d.cronaca,{fonte:d.fonte||'',pacchetto:nome,importata:new Date().toISOString()})}
 function cronacaAnnulla(id){const e=fE(id);if(!e||!e._primaCronaca)return;if(!confirm('Tolgo la cronaca importata e rimetto la partita com\'era prima?'))return;
- const b=JSON.parse(e._primaCronaca);['formazione','panchina','formazionePos','sostituzioni','eventiPartita','indisponibili','golCasa','golTrasferta','completato','eventiAvv','sostAvv','cronaca','giornata'].forEach(k=>{if(b[k]===undefined)delete e[k];else e[k]=b[k]});if(b.presenze===undefined)delete DATA.presenze[id];else DATA.presenze[id]=b.presenze;
+ const b=JSON.parse(e._primaCronaca);['formazione','panchina','formazionePos','sostituzioni','eventiPartita','indisponibili','golCasa','golTrasferta','completato','eventiAvv','sostAvv','cronaca','giornata','voti'].forEach(k=>{if(b[k]===undefined)delete e[k];else e[k]=b[k]});if(b.presenze===undefined)delete DATA.presenze[id];else DATA.presenze[id]=b.presenze;
  delete e._primaCronaca;saveData();openPartitaDettagli(id);toast('Importazione annullata')}
 async function cronacheDalPC(){if(!_pcUrl()){toast('Indirizzo del PC non impostato: aprilo da una partita, tab Voce',true);return}
  openModal('Cronache dal PC','<div id="cron-elenco" class="empty-state">Cerco sul PC...</div>','<button class="btn btn-secondary" onclick="closeModal()">Chiudi</button>');
@@ -1263,7 +1282,8 @@ async function cronacheDalPC(){if(!_pcUrl()){toast('Indirizzo del PC non imposta
   el.innerHTML=L.length?L.map(x=>{const p=DATA.eventi.find(y=>isP(y)&&y.data===x.data);return `<div class="convoca-row"><span style="min-width:74px;font-weight:700">${esc(fmtDate(x.data))}</span><span class="name">${esc(x.titolo)}<br><span style="font-size:11px;color:var(--muted);font-weight:400">${p?(p.cronaca?'già importata: si può aggiornare':'la partita è già in calendario'):'la partita verrà creata'}</span></span><button class="btn btn-primary btn-sm" onclick="cronacaImportaNome('${esc(x.nome)}')">Importa</button></div>`}).join(''):'<div class="empty-state">Nessuna cronaca sul PC</div>'}
  catch(err){const el=document.getElementById('cron-elenco');if(el)el.textContent='PC non raggiungibile: '+err.message}}
 /* ---- Campionato: Under 14 provinciale Prato, girone A (calendario pubblico della delegazione LND) ---- */
-const CAMP_SQ={CAS:'Casale Fattoria',SLO:'S.Lorenzo Campi',COI:'Coiano S.Lucia',MTL:'Montelupo sq.B',MTM:'Montemurlo Jolly',MEZ:'Mezzana',PRA:'Prato',POG:'Poggio a Caiano',VAL:'Valbisenzio Academy',LAN:'Lanciotto Campi sq.B',VIA:'Viaccia',CAL:'Calenzano',PIE:'Pieta 2004'};
+const CAMP_SQ={CAS:'Casale Fattoria 2001',SLO:'San Lorenzo Campi',COI:'CSL Prato Social Club',MTL:'Montelupo sq.B',MTM:'Montemurlo Jolly sq.B',MEZ:'Mezzana',PRA:'Prato',POG:'Poggio a Caiano 1909',VAL:'Valbisenzio Academy',LAN:'Lanciotto Campi sq.B',VIA:'Viaccia',CAL:'Calenzano',PIE:'Pietà 2004'};
+const CAMP_NOME='Under 14 provinciale Prato - girone A';
 const CAMP_CAL=[['2026-10-03','CAS-SLO COI-MTL MTM-MEZ PRA-POG VAL-LAN VIA-CAL','PIE'],['2026-10-10','CAL-PIE LAN-COI MEZ-VIA MTL-PRA POG-MTM SLO-VAL','CAS'],
  ['2026-10-17','COI-SLO MTM-MTL PIE-MEZ PRA-LAN VAL-CAS VIA-POG','CAL'],['2026-10-24','CAS-COI LAN-MTM MEZ-CAL MTL-VIA POG-PIE SLO-PRA','VAL'],
  ['2026-10-31','CAL-POG COI-VAL MTM-SLO PIE-MTL PRA-CAS VIA-LAN','MEZ'],['2026-11-07','CAS-MTM LAN-PIE MTL-CAL POG-MEZ SLO-VIA VAL-PRA','COI'],
@@ -1274,26 +1294,196 @@ const CAMP_CAL=[['2026-10-03','CAS-SLO COI-MTL MTM-MEZ PRA-POG VAL-LAN VIA-CAL',
 function _campRis(){const R=Object.assign({},(DATA.campionato||{}).ris||{});
  CAMP_CAL.forEach(([d,ms],i)=>ms.split(' ').forEach(p=>{const [c,t]=p.split('-'),k=(i+1)+'|'+c+'|'+t;if(R[k]||(c!=='CAL'&&t!=='CAL'))return;
   const e=DATA.eventi.find(x=>isP(x)&&x.data===d&&x.completato&&(x.casaTrasferta==='trasferta')===(t==='CAL'));if(e)R[k]=[+e.golCasa||0,+e.golTrasferta||0]}));return R}
-function _campClassifica(R){const T={};Object.keys(CAMP_SQ).forEach(k=>T[k]={k,g:0,v:0,n:0,p:0,gf:0,gs:0,pt:0});
- Object.entries(R).forEach(([key,r])=>{const [,c,t]=key.split('|');if(!T[c]||!T[t]||!Array.isArray(r))return;[[c,r[0],r[1]],[t,r[1],r[0]]].forEach(([s,f,x])=>{const o=T[s];o.g++;o.gf+=f;o.gs+=x;if(f>x){o.v++;o.pt+=3}else if(f===x){o.n++;o.pt++}else o.p++})});
+function _campClassifica(R,fino){const T={};Object.keys(CAMP_SQ).forEach(k=>T[k]={k,g:0,v:0,n:0,p:0,gf:0,gs:0,pt:0});
+ Object.entries(R).forEach(([key,r])=>{const [gi,c,t]=key.split('|');if(fino&&+gi>fino)return;if(!T[c]||!T[t]||!Array.isArray(r))return;[[c,r[0],r[1]],[t,r[1],r[0]]].forEach(([s,f,x])=>{const o=T[s];o.g++;o.gf+=f;o.gs+=x;if(f>x){o.v++;o.pt+=3}else if(f===x){o.n++;o.pt++}else o.p++})});
  return Object.values(T).sort((a,b)=>b.pt-a.pt||(b.gf-b.gs)-(a.gf-a.gs)||b.gf-a.gf||CAMP_SQ[a.k].localeCompare(CAMP_SQ[b.k]))}
-function render_campionato(){const v=document.getElementById('view-campionato');if(!v)return;const R=_campRis(),C=_campClassifica(R),oggi=todayISO();
- let prossima=CAMP_CAL.findIndex(g=>g[0]>=oggi);if(prossima<0)prossima=CAMP_CAL.length;
- let h=`<div class="toolbar no-print"><div style="flex:1;font-size:13px;color:var(--muted)">Under 14 provinciale Prato - girone A, andata</div>${_pcUrl()?'<button class="btn btn-secondary btn-sm" onclick="campDalPC()">Risultati dal PC</button>':''}</div>`;
- h+=`<div class="card" style="padding:0;overflow:auto;margin-bottom:16px"><table class="camp-tab"><thead><tr><th>#</th><th>Squadra</th><th>Pt</th><th>G</th><th>V</th><th>N</th><th>P</th><th>GF</th><th>GS</th><th>DR</th></tr></thead><tbody>${C.map((o,i)=>`<tr class="${o.k==='CAL'?'noi':''}"><td>${i+1}</td><td>${esc(CAMP_SQ[o.k])}</td><td><b>${o.pt}</b></td><td>${o.g}</td><td>${o.v}</td><td>${o.n}</td><td>${o.p}</td><td>${o.gf}</td><td>${o.gs}</td><td>${o.gf-o.gs>0?'+':''}${o.gf-o.gs}</td></tr>`).join('')}</tbody></table></div>`;
- h+='<h4 style="color:var(--b1);margin-bottom:8px">Giornate</h4>';
- CAMP_CAL.forEach(([d,ms,rip],i)=>{const gi=i+1,aperta=i===prossima||i===prossima-1;
-  h+=`<details class="camp-g card" style="padding:4px 14px;margin-bottom:8px"${aperta?' open':''}><summary>${gi}a giornata - ${esc(fmtDate(d))}</summary>${ms.split(' ').map(p=>{const [c,t]=p.split('-'),k=gi+'|'+c+'|'+t,r=R[k];
-   return `<div class="camp-m${c==='CAL'||t==='CAL'?' noi':''}" onclick="campRis('${k}')"><span class="c">${esc(CAMP_SQ[c])}</span><span class="x">${r?r[0]+' - '+r[1]:'-'}</span><span>${esc(CAMP_SQ[t])}</span></div>`}).join('')}<div style="font-size:12px;color:var(--muted);padding:6px 4px">Riposa: ${esc(CAMP_SQ[rip])}</div></details>`});
- h+='<p style="font-size:11px;color:var(--muted);margin-top:8px">Calendario della Delegazione LND di Prato (versione di luglio). Tocca una partita per scrivere o correggere il risultato; quelli del Calenzano arrivano anche dalle partite dell\'app.</p>';
- v.innerHTML=h}
+function _campUltima(R){let u=0;Object.keys(R).forEach(k=>{u=Math.max(u,+k.split('|')[0])});return u}
+function _campVar(R,fino){if(!fino||fino<2)return null;const prima={};_campClassifica(R,fino-1).forEach((o,i)=>prima[o.k]=i);const v={};_campClassifica(R,fino).forEach((o,i)=>v[o.k]=prima[o.k]-i);return v}
+function _campNr(R,i){return CAMP_CAL[i][1].split(' ').filter(p=>R[(i+1)+'|'+p.replace('-','|')]).length}
+function _campProssima(R){const oggi=todayISO();for(let i=0;i<CAMP_CAL.length;i++){const [d,ms]=CAMP_CAL[i],p=ms.split(' ').find(x=>x.split('-').includes('CAL'));if(!p)continue;const [c,t]=p.split('-'),k=(i+1)+'|'+c+'|'+t;if(d>=oggi&&!R[k])return{gi:i+1,d,c,t,k}}return null}
+function _campTabHTML(C,V,small){return `<div class="card" style="padding:0;overflow:auto${small?';margin-top:6px;box-shadow:none':''}"><table class="camp-tab${small?' small':''}"><thead><tr><th>#</th><th>Squadra</th><th>Pt</th><th>G</th><th>V</th><th>N</th><th>P</th><th>GF</th><th>GS</th><th>DR</th>${V?'<th></th>':''}</tr></thead><tbody>${C.map((o,i)=>{const d=V?V[o.k]||0:0;return `<tr class="${o.k==='CAL'?'noi':''}"><td>${i+1}</td><td>${esc(CAMP_SQ[o.k])}</td><td><b>${o.pt}</b></td><td>${o.g}</td><td>${o.v}</td><td>${o.n}</td><td>${o.p}</td><td>${o.gf}</td><td>${o.gs}</td><td>${o.gf-o.gs>0?'+':''}${o.gf-o.gs}</td>${V?`<td class="var ${d>0?'su':d<0?'giu':''}">${d>0?'&#9650;'+d:d<0?'&#9660;'+(-d):'='}</td>`:''}</tr>`}).join('')}</tbody></table></div>`}
+let _campTab='classifica',_campPull=0;
+function campTab(t){_campTab=t;render_campionato()}
+function render_campionato(){const v=document.getElementById('view-campionato');if(!v)return;_imgPronta(_logoSrc());const R=_campRis(),M=DATA.campionato||{},ult=_campUltima(R),pros=_campProssima(R);
+ let h=`<div class="camp-top"><div><div class="camp-tit">${esc(CAMP_NOME)}</div><div class="camp-sub">Sola andata, 13 giornate${M.agg?' - aggiornato '+esc(_campQuando(M.agg)):''}${M.fonte==='tuttocampo'?' da Tuttocampo':''}</div></div>${_pcUrl()?'<button class="btn btn-secondary btn-sm" onclick="campDalPC()">Aggiorna risultati</button>':''}</div>`;
+ if(pros){const o=(M.ora||{})[pros.k];h+=`<div class="camp-pros">Prossima partita: <b>${pros.gi}a giornata, ${esc(fmtDate(pros.d))}${o?' ore '+esc(o):''}</b><br>${esc(CAMP_SQ[pros.c])} - ${esc(CAMP_SQ[pros.t])}</div>`}
+ h+=`<div class="tabs"><div class="tab${_campTab==='classifica'?' active':''}" onclick="campTab('classifica')">Classifica</div><div class="tab${_campTab==='giornate'?' active':''}" onclick="campTab('giornate')">Giornate</div></div>`;
+ if(_campTab==='classifica'){
+  h+=`<div class="camp-h"><b>${ult?'Classifica dopo la '+ult+'a giornata':'Nessun risultato ancora'}</b><button class="btn btn-wa btn-sm" onclick="campShareClassifica()">Condividi su WhatsApp</button></div>`+_campTabHTML(_campClassifica(R),_campVar(R,ult));
+  if(M.controllo&&M.controllo!=='ok')h+=`<p class="camp-nota">Controllo con Tuttocampo: ${esc(M.controllo)}</p>`;
+  h+='<p class="camp-nota">3 punti a vittoria, 1 a pareggio; a pari punti differenza reti, poi gol fatti. La freccia indica le posizioni guadagnate o perse rispetto alla giornata prima. La classifica dopo ogni giornata è nella scheda Giornate.</p>'}
+ else{let prossima=CAMP_CAL.findIndex(g=>g[0]>=todayISO());if(prossima<0)prossima=CAMP_CAL.length;
+  CAMP_CAL.forEach(([d,ms,rip],i)=>{const gi=i+1,aperta=i===prossima||i===prossima-1,nr=_campNr(R,i);
+   h+=`<details class="camp-g card" style="padding:4px 14px;margin-bottom:8px"${aperta?' open':''}><summary>${gi}a giornata - ${esc(fmtDate(d))}<span class="camp-cnt">${nr?nr+'/6 risultati':''}</span></summary>${ms.split(' ').map(p=>{const [c,t]=p.split('-'),k=gi+'|'+c+'|'+t,r=R[k],o=(M.ora||{})[k],st=(M.stato||{})[k];
+    return `<div class="camp-m${c==='CAL'||t==='CAL'?' noi':''}" onclick="campRis('${k}')"><span class="c">${esc(CAMP_SQ[c])}</span><span class="x">${r?r[0]+' - '+r[1]:esc(st||o||'-')}</span><span>${esc(CAMP_SQ[t])}</span></div>`}).join('')}<div class="camp-rip">Riposa: ${esc(CAMP_SQ[rip])}</div>`;
+   h+=nr?`<div class="camp-prog-t">Classifica dopo la ${gi}a giornata</div>`+_campTabHTML(_campClassifica(R,gi),_campVar(R,gi),true):'<div class="camp-rip">La classifica di questa giornata compare con i primi risultati.</div>';
+   h+=`<div style="margin:10px 0 6px"><button class="btn btn-wa btn-sm" onclick="campShareGiornata(${i})">Condividi su WhatsApp</button></div></details>`});
+  h+='<p class="camp-nota">Calendario della Delegazione LND di Prato. Risultati da Tuttocampo, letti dal PC; tocca una partita per correggere a mano.</p>'}
+ v.innerHTML=h;
+ if(_pcUrl()&&Date.now()-_campPull>5*60000){_campPull=Date.now();campDalPC(true)}}
+function _campQuando(iso){const d=new Date(iso);if(isNaN(d))return String(iso);return fmtDate(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))+' alle '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 function campRis(k){const [g,c,t]=k.split('|');DATA.campionato=DATA.campionato||{};const R=DATA.campionato.ris=DATA.campionato.ris||{};const cur=_campRis()[k];
  const x=prompt(g+'a giornata: '+CAMP_SQ[c]+' - '+CAMP_SQ[t]+'\nRisultato (es. 2-1). Vuoto per cancellare.',cur?cur.join('-'):'');if(x===null)return;const s=x.trim();
  if(!s)delete R[k];else{const m=s.match(/^(\d{1,2})\s*[-:]\s*(\d{1,2})$/);if(!m){toast('Scrivi il risultato come 2-1',true);return}R[k]=[+m[1],+m[2]]}
  DATA.campionato.agg=new Date().toISOString();saveData();render_campionato()}
-async function campDalPC(){try{const j=await _pcFetch('/campionato',{},15000),d=j.doc;if(!d||!d.ris){toast('Sul PC non ci sono risultati',true);return}
- DATA.campionato=DATA.campionato||{};DATA.campionato.ris=Object.assign(DATA.campionato.ris||{},d.ris);DATA.campionato.agg=new Date().toISOString();saveData();render_campionato();toast('Risultati aggiornati: '+Object.keys(d.ris).length)}
- catch(err){toast('PC non raggiungibile: '+err.message,true)}}
+async function campDalPC(silenzioso){try{const j=await _pcFetch('/campionato',{},30000),d=j.doc;if(!d||!d.ris){if(!silenzioso)toast('Sul PC non ci sono risultati',true);return}
+ const C=DATA.campionato=DATA.campionato||{},prima=JSON.stringify([C.ris,C.ora,C.stato,C.controllo]);
+ C.ris=Object.assign(C.ris||{},d.ris);C.ora=d.ora||{};C.stato=d.stato||{};C.controllo=d.controllo||'';C.fonte=d.fonte||'';C.agg=d.agg||new Date().toISOString();
+ const cambiato=prima!==JSON.stringify([C.ris,C.ora,C.stato,C.controllo]);if(cambiato)saveData();
+ const vw=document.getElementById('view-campionato');if(vw&&vw.classList.contains('active'))render_campionato();if(!silenzioso)toast(cambiato?'Risultati aggiornati':'Nessun risultato nuovo')}
+ catch(err){if(!silenzioso)toast('PC non raggiungibile: '+err.message,true)}}
+/* ---- CAMPIONATO_WA_v1: immagini per WhatsApp ---- */
+const IMG_W=1080,IMG_F='system-ui,"Segoe UI",Roboto,Arial,sans-serif';
+const _imgC={};
+function _imgPronta(src){if(!src)return null;let o=_imgC[src];if(!o){o=_imgC[src]={img:new Image(),ok:false};o.img.onload=()=>{o.ok=true};o.img.src=src}return o.ok?o.img:null}
+function _logoSrc(){const w=document.getElementById('sidebar-logo-wrap');if(!w)return'';const im=w.querySelector('img');if(im&&im.src)return im.src;const sv=w.querySelector('svg');if(sv){try{return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(sv))}catch(_){}}return''}
+function _rr(x,X,Y,W,H,r){x.beginPath();if(x.roundRect)x.roundRect(X,Y,W,H,r);else x.rect(X,Y,W,H)}
+function _fit(x,t,max,size,peso){let s=size;const f=()=>{x.font=`${peso||'bold'} ${s}px ${IMG_F}`};f();while(s>14&&x.measureText(String(t)).width>max){s--;f()}return s}
+function _imgWrap(x,t,maxw){const out=[];let r='';String(t||'').split(' ').forEach(p=>{const s=r?r+' '+p:p;if(x.measureText(s).width>maxw&&r){out.push(r);r=p}else r=s});if(r)out.push(r);return out}
+function _imgTela(H){const c=document.createElement('canvas');c.width=IMG_W;c.height=H;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0d2b5c');g.addColorStop(1,'#1e3a8a');x.fillStyle=g;x.fillRect(0,0,IMG_W,H);
+ x.save();x.globalAlpha=.05;x.fillStyle='#fff';for(let i=-H;i<IMG_W;i+=150){x.beginPath();x.moveTo(i,0);x.lineTo(i+60,0);x.lineTo(i+60+H*.55,H);x.lineTo(i+H*.55,H);x.fill()}x.restore();
+ x.fillStyle='#dc2626';x.fillRect(0,0,IMG_W,12);return {c,x}}
+function _imgTesta(x,sopra,titolo,sotto){const L=_imgPronta(_logoSrc());let tx=60;if(L){x.drawImage(L,56,48,120,120);tx=200}
+ x.textAlign='left';x.fillStyle='#93c5fd';_fit(x,String(sopra||'').toUpperCase(),IMG_W-tx-60,26);x.fillText(String(sopra||'').toUpperCase(),tx,84);
+ x.fillStyle='#fff';_fit(x,titolo,IMG_W-tx-60,70,'800');x.fillText(titolo,tx,154);
+ if(sotto){x.fillStyle='rgba(255,255,255,.85)';_fit(x,sotto,IMG_W-tx-60,28,'normal');x.fillText(sotto,tx,198)}return 240}
+function _imgPiede(x,H){x.fillStyle='rgba(0,0,0,.25)';x.fillRect(0,H-90,IMG_W,90);x.fillStyle='#dc2626';x.fillRect(0,H-90,IMG_W,5);x.textAlign='left';x.fillStyle='#fff';x.font=`bold 28px ${IMG_F}`;x.fillText('CALENZANO GIOVANISSIMI B 2013',60,H-44);x.fillStyle='rgba(255,255,255,.7)';x.font=`21px ${IMG_F}`;x.fillText('Stagione 2026/27',60,H-16);x.textAlign='right';x.fillText(fmtDate(todayISO()),IMG_W-60,H-30)}
+function _imgCondividi(canvas,nome,testo){let file=null;try{const u=canvas.toDataURL('image/png'),bin=atob(u.split(',')[1]),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);file=new File([arr],nome,{type:'image/png'});window._ultimaImmagineWA=u}catch(err){console.warn('immagine',err)}
+ if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],text:testo}).catch(()=>{});return}
+ if(file){const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=nome;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Immagine scaricata: allegala al messaggio WhatsApp')}
+ shareWAGruppo(testo)}
+function _imgTabella(x,y,C,V,rowH){const X=40,W=IMG_W-80,cols=[['#',66,'c'],['SQUADRA',0,'l'],['PT',78,'c'],['G',52,'c'],['V',52,'c'],['N',52,'c'],['P',52,'c'],['GF',60,'c'],['GS',60,'c'],['DR',70,'c']];if(V)cols.push(['',70,'c']);
+ cols[1][1]=W-cols.reduce((s,c)=>s+c[1],0);const H=rowH*(C.length+1)+12;x.fillStyle='#fff';_rr(x,X,y,W,H,22);x.fill();
+ let cx=X;x.font=`bold 20px ${IMG_F}`;x.fillStyle='#64748b';cols.forEach(([t,w,al])=>{x.textAlign=al==='l'?'left':'center';x.fillText(t,al==='l'?cx+12:cx+w/2,y+rowH/2+10);cx+=w});
+ C.forEach((o,i)=>{const ry=y+rowH*(i+1)+4,noi=o.k==='CAL',d=V?V[o.k]||0:0;
+  if(noi){x.fillStyle='#dc2626';_rr(x,X+8,ry,W-16,rowH-6,14);x.fill()}else if(i%2){x.fillStyle='#f1f5f9';_rr(x,X+8,ry,W-16,rowH-6,14);x.fill()}
+  const vals=[i+1,CAMP_SQ[o.k],o.pt,o.g,o.v,o.n,o.p,o.gf,o.gs,(o.gf-o.gs>0?'+':'')+(o.gf-o.gs)];if(V)vals.push(d>0?'\u25B2'+d:d<0?'\u25BC'+(-d):'=');
+  let cx=X;cols.forEach(([t,w,al],j)=>{const val=String(vals[j]),yy=ry+rowH/2+6;x.textAlign=al==='l'?'left':'center';
+   if(j===1){x.fillStyle=noi?'#fff':'#0d2b5c';_fit(x,val,w-24,Math.round(rowH*.38),noi?'800':'600')}
+   else{x.font=`${j===2||noi?'bold':'normal'} ${j===2?Math.round(rowH*.42):Math.round(rowH*.34)}px ${IMG_F}`;x.fillStyle=noi?'#fff':j===2?'#0d2b5c':'#334155';if(V&&j===cols.length-1&&!noi)x.fillStyle=d>0?'#16a34a':d<0?'#dc2626':'#94a3b8'}
+   x.fillText(val,al==='l'?cx+12:cx+w/2,yy);cx+=w})});
+ return y+H}
+function _imgClassifica(R,fino){const C=_campClassifica(R,fino),V=_campVar(R,fino),rowH=72,H=250+rowH*(C.length+1)+12+70+90;const {c,x}=_imgTela(H);
+ let y=_imgTesta(x,CAMP_NOME,'CLASSIFICA',fino?'Dopo la '+fino+'a giornata - '+fmtDateLong(CAMP_CAL[fino-1][0]):'Prima dell\'inizio');
+ y=_imgTabella(x,y+6,C,V,rowH);x.textAlign='left';x.fillStyle='rgba(255,255,255,.75)';x.font=`20px ${IMG_F}`;x.fillText('3 punti a vittoria, 1 a pareggio. Risultati: Tuttocampo.'+(V?' Freccia: posizioni rispetto alla giornata prima.':''),60,y+42);
+ _imgPiede(x,H);return c}
+function campShareClassifica(){const R=_campRis(),u=_campUltima(R),C=_campClassifica(R,u);
+ const t='*CLASSIFICA'+(u?' dopo la '+u+'a giornata':'')+'*\n'+CAMP_NOME+'\n\n'+C.map((o,i)=>(i+1)+'. '+CAMP_SQ[o.k]+'  '+o.pt+' pt ('+o.g+' g, '+(o.gf-o.gs>0?'+':'')+(o.gf-o.gs)+')').join('\n');
+ _imgCondividi(_imgClassifica(R,u),'classifica-'+(u||0)+'a-giornata.png',t)}
+function _campMarcatori(d){const e=DATA.eventi.find(x=>isP(x)&&x.data===d&&x.completato);if(!e)return'';const M={},ord=[];
+ (e.eventiPartita||[]).filter(x=>x.tipo==='gol'||x.tipo==='rigore').forEach(x=>{const g=fG(x.giocatoreId),k=g?g.cognome:'?';if(!M[k]){M[k]={n:0,r:0};ord.push(k)}M[k].n++;if(x.tipo==='rigore')M[k].r++});
+ return ord.map(k=>k+(M[k].n>1?' '+M[k].n:'')+(M[k].r?' ('+(M[k].r>1?M[k].r+' ':'')+'rig.)':'')).join(', ')}
+function _imgGiornata(i){const R=_campRis(),M=DATA.campionato||{},[d,ms,rip]=CAMP_CAL[i],gi=i+1,P=ms.split(' ').map(p=>{const [c,t]=p.split('-');return{c,t,k:gi+'|'+c+'|'+t}});
+ const marc=_campMarcatori(d),tmp=document.createElement('canvas').getContext('2d');tmp.font=`22px ${IMG_F}`;const mr=marc?_imgWrap(tmp,'Marcatori Calenzano: '+marc,IMG_W-140):[];
+ const nr=_campNr(R,i),rowH=60,H=250+P.length*112+(mr.length?mr.length*30+16:0)+80+(nr?70+rowH*14+12:0)+40+90;const {c,x}=_imgTela(H);
+ let y=_imgTesta(x,CAMP_NOME,gi+'a GIORNATA',fmtDateLong(d))+6;
+ P.forEach(p=>{const r=R[p.k],noi=p.c==='CAL'||p.t==='CAL',X=40,W=IMG_W-80,h=96,cx=IMG_W/2,o=(M.ora||{})[p.k],st=(M.stato||{})[p.k];
+  x.fillStyle=noi?'#fef2f2':'#fff';_rr(x,X,y,W,h,20);x.fill();if(noi){x.lineWidth=5;x.strokeStyle='#dc2626';_rr(x,X,y,W,h,20);x.stroke()}
+  x.fillStyle=r?'#0d2b5c':'#e2e8f0';_rr(x,cx-85,y+14,170,h-28,14);x.fill();x.textAlign='center';x.fillStyle=r?'#fff':'#475569';
+  if(r){x.font=`800 40px ${IMG_F}`;x.fillText(r[0]+' - '+r[1],cx,y+h/2+14)}else{_fit(x,st||o||'da giocare',150,24,'bold');x.fillText(st||o||'da giocare',cx,y+h/2+8)}
+  const nm=(t,al,xx,vince)=>{x.textAlign=al;x.fillStyle=t==='CAL'?'#dc2626':'#0d2b5c';_fit(x,CAMP_SQ[t],cx-85-X-44,32,t==='CAL'||vince?'800':'600');x.fillText(CAMP_SQ[t],xx,y+h/2+11)};
+  nm(p.c,'right',cx-105,r&&r[0]>r[1]);nm(p.t,'left',cx+105,r&&r[1]>r[0]);y+=h+16;
+  if(noi&&mr.length){x.textAlign='left';x.fillStyle='#fff';x.font=`22px ${IMG_F}`;mr.forEach(l=>{x.fillText(l,70,y+6);y+=30});y+=16}});
+ x.font=`bold 24px ${IMG_F}`;const rt='RIPOSA: '+CAMP_SQ[rip].toUpperCase(),rw=x.measureText(rt).width+56;x.fillStyle='rgba(255,255,255,.16)';_rr(x,IMG_W/2-rw/2,y+6,rw,50,25);x.fill();x.fillStyle='#fff';x.textAlign='center';x.fillText(rt,IMG_W/2,y+40);y+=80;
+ if(nr){x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 26px ${IMG_F}`;x.fillText('CLASSIFICA DOPO LA '+gi+'a GIORNATA',60,y+42);_imgTabella(x,y+64,_campClassifica(R,gi),_campVar(R,gi),rowH)}
+ _imgPiede(x,H);return c}
+function campShareGiornata(i){const R=_campRis(),M=DATA.campionato||{},[d,ms,rip]=CAMP_CAL[i],gi=i+1;let t='*'+gi+'a GIORNATA* - '+fmtDateLong(d)+'\n'+CAMP_NOME+'\n';
+ ms.split(' ').forEach(p=>{const [c,tt]=p.split('-'),k=gi+'|'+c+'|'+tt,r=R[k],o=(M.ora||{})[k];t+='\n'+CAMP_SQ[c]+' '+(r?r[0]+'-'+r[1]:'-')+' '+CAMP_SQ[tt]+(!r&&o?' (ore '+o+')':'')});
+ t+='\nRiposa: '+CAMP_SQ[rip];const marc=_campMarcatori(d);if(marc)t+='\n\nMarcatori Calenzano: '+marc;
+ if(_campNr(R,i))t+='\n\n*Classifica dopo la '+gi+'a giornata*\n'+_campClassifica(R,gi).map((o,j)=>(j+1)+'. '+CAMP_SQ[o.k]+'  '+o.pt).join('\n');
+ _imgCondividi(_imgGiornata(i),'giornata-'+gi+'.png',t)}
+/* ---- giornata di una partita, voti ---- */
+function _partG(e){if(e.giornata)return +e.giornata;if(e.tipo!=='partita')return null;const i=CAMP_CAL.findIndex(c=>c[0]===e.data);return i>=0?i+1:null}
+function _partLab(e){const g=_partG(e);return g?'G'+g:(e.data||'').slice(8,10)+'/'+(e.data||'').slice(5,7)}
+function _giocati(e){const ids=(e.formazione||[]).slice();(e.sostituzioni||[]).forEach(s=>{if(s.in&&!ids.includes(s.in))ids.push(s.in)});return ids.map(fG).filter(Boolean)}
+function _fmtVoto(v){if(v==null||v==='')return'-';return String(Math.round(+v*100)/100).replace('.',',')}
+function _votoCls(v){return v==null?'sv':v>=7?'alto':v>=6?'ok':'basso'}
+function _mediaVoti(e){const V=e.voti||{},vs=_giocati(e).map(g=>V[g.id]).filter(v=>v!=null);return vs.length?{m:vs.reduce((a,b)=>a+b,0)/vs.length,n:vs.length}:null}
+function votiTabHTML(e,id){const G=_giocati(e);if(!G.length)return '<div class="empty-state">Prima inserisci la formazione: i voti si danno a chi ha giocato.</div>';const V=e.voti||{},mv=_mediaVoti(e);
+ return `<p style="font-size:12px;color:var(--muted);margin-bottom:8px">Tocca il campo e scrivi il voto, da 1 a 10 (anche 6,5 o 6,25). Si salva da solo.</p><div class="card" style="padding:0;overflow:auto"><table class="voti-tab"><thead><tr><th>N</th><th>Giocatore</th><th>Min</th><th>Gol</th><th>Voto</th></tr></thead><tbody>${G.map(g=>{const m=_minGioc(e,g.id),gl=(e.eventiPartita||[]).filter(x=>x.giocatoreId===g.id&&(x.tipo==='gol'||x.tipo==='rigore')).length,v=V[g.id];
+  return `<tr><td>${esc(String(g.numero||''))}</td><td>${pLink(g)}</td><td>${m==null?'-':m+"'"}</td><td>${gl||''}</td><td><input class="voto-in" type="text" inputmode="decimal" value="${v!=null?_fmtVoto(v):''}" onchange="setVoto('${id}','${g.id}',this)"></td></tr>`}).join('')}</tbody></table></div>
+ <div class="voti-pie"><span id="voti-media">${mv?'Media squadra '+_fmtVoto(mv.m)+' ('+mv.n+' voti)':'Nessun voto ancora'}</span><button class="btn btn-wa btn-sm" onclick="condividiVotiWA('${id}')">Condividi su WhatsApp</button></div>`}
+function setVoto(id,gId,el){const e=fE(id);if(!e)return;const s=String(el.value).replace(',','.').trim();e.voti=e.voti||{};
+ if(s===''){delete e.voti[gId]}else{let v=parseFloat(s);if(isNaN(v)||v<1||v>10){toast('Il voto va da 1 a 10',true);el.value=e.voti[gId]!=null?_fmtVoto(e.voti[gId]):'';return}v=Math.round(v*4)/4;e.voti[gId]=v;el.value=_fmtVoto(v)}
+ saveData();const mv=_mediaVoti(e),m=document.getElementById('voti-media');if(m)m.textContent=mv?'Media squadra '+_fmtVoto(mv.m)+' ('+mv.n+' voti)':'Nessun voto ancora'}
+function _imgVoti(e){const G=_giocati(e),V=e.voti||{},mv=_mediaVoti(e),gi=_partG(e),rowH=76,H=250+70+G.length*rowH+20+(mv?90:0)+40+90;const {c,x}=_imgTela(H);
+ let y=_imgTesta(x,(gi?gi+'a giornata - ':'')+(e.competizione||''),'PAGELLE',matchLabel(e)+'  '+(e.golCasa||0)+' - '+(e.golTrasferta||0)+'  -  '+fmtDate(e.data))+4;
+ x.fillStyle='#fff';_rr(x,40,y,IMG_W-80,G.length*rowH+66,24);x.fill();
+ x.font=`bold 20px ${IMG_F}`;x.fillStyle='#64748b';x.textAlign='left';x.fillText('GIOCATORE',150,y+40);x.textAlign='center';x.fillText('MIN',700,y+40);x.fillText('GOL',800,y+40);x.fillText('VOTO',940,y+40);
+ G.forEach((g,i)=>{const ry=y+56+i*rowH,v=V[g.id],m=_minGioc(e,g.id),gl=(e.eventiPartita||[]).filter(z=>z.giocatoreId===g.id&&(z.tipo==='gol'||z.tipo==='rigore')).length,my=ry+rowH/2-3;
+  if(i%2){x.fillStyle='#f1f5f9';_rr(x,52,ry,IMG_W-104,rowH-6,14);x.fill()}
+  x.fillStyle='#0d2b5c';x.beginPath();x.arc(100,my,26,0,Math.PI*2);x.fill();x.fillStyle='#fff';x.textAlign='center';x.font=`bold 24px ${IMG_F}`;x.fillText(String(g.numero||''),100,my+8);
+  x.textAlign='left';x.fillStyle='#0d2b5c';_fit(x,fn(g),500,30,'600');x.fillText(fn(g),150,my+10);
+  x.textAlign='center';x.fillStyle='#334155';x.font=`26px ${IMG_F}`;x.fillText(m==null?'-':m+"'",700,my+9);if(gl){x.font=`bold 26px ${IMG_F}`;x.fillText(String(gl),800,my+9)}
+  x.fillStyle=v==null?'#e2e8f0':v>=7?'#16a34a':v>=6?'#2563eb':'#dc2626';_rr(x,880,ry+8,120,rowH-22,14);x.fill();x.fillStyle=v==null?'#475569':'#fff';x.font=`bold ${v==null?24:34}px ${IMG_F}`;x.fillText(v==null?'s.v.':_fmtVoto(v),940,my+(v==null?8:12))});
+ y+=G.length*rowH+66+20;
+ if(mv){x.fillStyle='#dc2626';_rr(x,IMG_W/2-250,y+8,500,70,35);x.fill();x.fillStyle='#fff';x.textAlign='center';x.font=`bold 34px ${IMG_F}`;x.fillText('MEDIA SQUADRA  '+_fmtVoto(mv.m),IMG_W/2,y+55)}
+ _imgPiede(x,H);return c}
+function condividiVotiWA(id){const e=fE(id);if(!e)return;const G=_giocati(e),V=e.voti||{},mv=_mediaVoti(e),gi=_partG(e);
+ let t='*PAGELLE - '+matchLabel(e)+' '+(e.golCasa||0)+'-'+(e.golTrasferta||0)+'*\n'+(gi?gi+'a giornata - ':'')+fmtDateLong(e.data)+'\n';
+ G.forEach(g=>{const m=_minGioc(e,g.id);t+='\n'+(g.numero?g.numero+' ':'')+fn(g)+': '+(V[g.id]!=null?_fmtVoto(V[g.id]):'s.v.')+' ('+(m==null?'-':m+"'")+')'});
+ if(mv)t+='\n\nMedia squadra: '+_fmtVoto(mv.m);t+='\n\nMister Roberto';_imgCondividi(_imgVoti(e),'pagelle-'+(e.data||'')+'.png',t)}
+/* ---- cronaca: tabellino in immagine, testo completo nel messaggio ---- */
+function _marcLista(e){const out=[],M={},ord=[];(e.eventiPartita||[]).filter(x=>x.tipo==='gol'||x.tipo==='rigore').sort((a,b)=>(a.minuto||0)-(b.minuto||0)).forEach(x=>{const g=fG(x.giocatoreId),k=g?g.cognome:'?';if(!M[k]){M[k]=[];ord.push(k)}M[k].push(_minTxt(e,x)+(x.tipo==='rigore'?' rig.':''))});
+ ord.forEach(k=>out.push({noi:1,t:k+'   '+M[k].join(', ')}));(e.eventiAvv||[]).filter(x=>x.tipo==='gol'||x.tipo==='rigore').forEach(x=>out.push({noi:0,t:'n°'+(x.numero||'?')+'   '+_minTxt(e,x)}));
+ (e.eventiPartita||[]).filter(x=>x.tipo==='autogol').forEach(x=>{const g=fG(x.giocatoreId);out.push({noi:0,t:'aut. '+(g?g.cognome:'')+'   '+_minTxt(e,x)})});return out}
+function _formTesto(e){const c=e.cronaca||{};if(c.formazione)return c.formazione;return (e.formazione||[]).map(fG).filter(Boolean).map(g=>(g.numero?g.numero+' ':'')+g.cognome).join(', ')}
+function _panTesto(e){const c=e.cronaca||{};if(c.panchina)return c.panchina;return (e.panchina||[]).map(fG).filter(Boolean).map(g=>(g.numero?g.numero+' ':'')+g.cognome).join(', ')}
+function _imgCronaca(e){const c0=e.cronaca||{},casa=e.casaTrasferta!=='trasferta',av=(e.avversario||'Avversario').trim(),home=casa?CASA_NOME:av,away=casa?av:CASA_NOME,{n,l}=partStats(e),SL=casa?n:l,SR=casa?l:n,gi=_partG(e);
+ const t=document.createElement('canvas').getContext('2d'),mw=IMG_W-140,marc=_marcLista(e);t.font=`24px ${IMG_F}`;const ft=_formTesto(e),pt=_panTesto(e),form=ft?_imgWrap(t,ft,mw):[],pan=pt?_imgWrap(t,'A disposizione: '+pt,mw):[];
+ t.font=`italic 26px ${IMG_F}`;const sint=c0.sintesi?_imgWrap(t,c0.sintesi,mw):[];const ST=[['Tiri totali','tiri'],['Tiri in porta','porta'],["Calci d'angolo",'angoli'],['Falli commessi','falli'],['Fuorigioco','fuorigioco'],['Parate','parate']];
+ const H=250+236+(marc.length?66+marc.length*38:0)+66+ST.length*66+(form.length?66+(form.length+pan.length)*34:0)+(sint.length?30+sint.length*38:0)+40+90;const {c,x}=_imgTela(H);
+ let y=_imgTesta(x,e.competizione||'Partita',gi?gi+'a GIORNATA':evL(e).toUpperCase(),fmtDateLong(e.data)+(e.luogo?' - '+e.luogo:''))+4;
+ x.fillStyle='#fff';_rr(x,40,y,IMG_W-80,206,26);x.fill();x.textAlign='center';x.fillStyle='#0d2b5c';x.font=`800 100px ${IMG_F}`;x.fillText((e.golCasa||0)+' - '+(e.golTrasferta||0),IMG_W/2,y+138);
+ const nm=(s,noi,xx)=>{x.fillStyle=noi?'#dc2626':'#0d2b5c';_fit(x,s.toUpperCase(),290,34,'800');x.fillText(s.toUpperCase(),xx,y+118)};nm(home,casa,205);nm(away,!casa,IMG_W-205);y+=236;
+ const tit=s=>{x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 24px ${IMG_F}`;x.fillText(s,70,y+40);y+=66};
+ if(marc.length){tit('MARCATORI');marc.forEach(m=>{x.fillStyle=m.noi?'#ef4444':'#cbd5e1';x.beginPath();x.arc(80,y-8,7,0,Math.PI*2);x.fill();x.fillStyle='#fff';x.textAlign='left';x.font=`26px ${IMG_F}`;x.fillText(m.t,100,y);y+=38})}
+ tit('STATISTICHE');ST.forEach(([lab,k])=>{const a=SL[k]||0,b=SR[k]||0,pa=a+b?a/(a+b):.5,X=70,W=IMG_W-140;x.font=`bold 30px ${IMG_F}`;x.fillStyle='#fff';x.textAlign='left';x.fillText(String(a),X,y);x.textAlign='right';x.fillText(String(b),X+W,y);
+  x.textAlign='center';x.fillStyle='#cbd5e1';x.font=`bold 20px ${IMG_F}`;x.fillText(lab.toUpperCase(),IMG_W/2,y-4);
+  x.fillStyle='rgba(255,255,255,.18)';_rr(x,X,y+12,W,10,5);x.fill();x.fillStyle=casa?'#ef4444':'#93c5fd';_rr(x,X,y+12,W*pa,10,5);x.fill();x.fillStyle=casa?'#93c5fd':'#ef4444';_rr(x,X+W*pa,y+12,W*(1-pa),10,5);x.fill();y+=66});
+ if(form.length){y+=4;tit('FORMAZIONE '+CASA_NOME.toUpperCase());x.textAlign='left';x.font=`24px ${IMG_F}`;x.fillStyle='#fff';form.forEach(r=>{x.fillText(r,70,y);y+=34});x.fillStyle='rgba(255,255,255,.75)';pan.forEach(r=>{x.fillText(r,70,y);y+=34})}
+ if(sint.length){y+=16;x.textAlign='left';x.fillStyle='#fff';x.font=`italic 26px ${IMG_F}`;sint.forEach(r=>{x.fillText(r,70,y);y+=38})}
+ _imgPiede(x,H);return c}
+function _cronacaTesto(e){const c=e.cronaca;if(!c){const m=_marcLista(e).map(z=>z.t).join('\n');return '*'+matchLabel(e)+' '+(e.golCasa||0)+'-'+(e.golTrasferta||0)+'*\n'+fmtDateLong(e.data)+(m?'\n\n'+m:'')}
+ let t='*'+(c.titolo||matchLabel(e))+'*'+(c.sottotitolo?'\n'+c.sottotitolo:'');if(c.intro)t+='\n\n'+c.intro;let t0=0;
+ (c.righe||[]).forEach(r=>{if(r.t!==t0){t0=r.t;t+='\n\n*'+(r.t===1?'PRIMO TEMPO':'SECONDO TEMPO')+'*'}t+='\n'+(r.fine?'*'+r.testo+'*':(r.m!=null?r.m+"' ":'')+r.testo+(r.gol&&r.ris?' ('+r.ris+')':''))});
+ if(c.sintesi)t+='\n\n'+c.sintesi;return t}
+function cronacaShare(id){const e=fE(id);if(!e)return;_imgCondividi(_imgCronaca(e),'partita-'+(e.data||'')+'.png',_cronacaTesto(e))}
+/* ---- scheda giocatore ---- */
+function _votiGioc(gId){return DATA.eventi.filter(isP).filter(ev=>_minGioc(ev,gId)!==null).sort((a,b)=>(a.data||'').localeCompare(b.data||'')).map(ev=>({ev,lab:_partLab(ev),v:(ev.voti||{})[gId],m:_minGioc(ev,gId)}))}
+function _medieGioc(gId){const s=stats(gId),VG=_votiGioc(gId),vv=VG.filter(x=>x.v!=null);return{s,VG,mv:vv.length?vv.reduce((t,x)=>t+x.v,0)/vv.length:null,nv:vv.length,mm:s.presenze?Math.round(s.minuti/s.presenze):0}}
+function votiStripHTML(g){const {s,VG,mv,nv,mm}=_medieGioc(g.id);if(!VG.length)return'';
+ return `<div class="voti-strip"><div class="voti-chips">${VG.map(x=>`<span class="voto-chip ${_votoCls(x.v)}" onclick="closeModal();openPartitaDettagli('${x.ev.id}')"><span>${esc(x.lab)}</span><b>${x.v!=null?_fmtVoto(x.v):'s.v.'}</b></span>`).join('')}</div><div class="voti-medie"><span>Media voto <b>${mv!=null?_fmtVoto(mv):'-'}</b>${nv?' ('+nv+(nv===1?' partita':' partite')+')':''}</span><span>Minuti a partita <b>${mm}'</b></span><span>Partite <b>${s.presenze}</b></span></div></div>`}
+function _imgGiocatore(g){const {s,VG,mv,mm}=_medieGioc(g.id),a=attendance(g.id,isA),pp=attendance(g.id,isP);
+ const T=[['PRESENZE',s.presenze],['MINUTI',s.minuti],['MIN. A PARTITA',s.presenze?mm+"'":'-'],['GOL',s.gol],['MEDIA VOTO',mv!=null?_fmtVoto(mv):'-'],['ASSIST',s.assist],['TIRI',s.tiriTot],['TIRI IN PORTA',s.tiriPorta],['PRECISIONE',s.tiriTot?Math.round(s.tiriPorta/s.tiriTot*100)+'%':'-'],['FALLI',s.falli],['FUORIGIOCO',s.fuorigioco],['CARTELLINI',s.gialli+'G  '+s.rossi+'R'],['% ALLENAMENTI',a.pct+'%'],['% PARTITE',pp.pct+'%'],['RIGORI',s.rigori+(s.rigoriSbagliati?' su '+(s.rigori+s.rigoriSbagliati):'')]];
+ const tileH=136,gap=18,rT=Math.ceil(T.length/3),cR=Math.ceil(VG.length/6),rowH=58,H=270+rT*(tileH+gap)+(VG.length?66+cR*100+66+56+VG.length*rowH+20:0)+30+90;const {c,x}=_imgTela(H);
+ const F=_imgPronta(g.foto),cx0=140,cy0=136,rad=88;x.save();x.beginPath();x.arc(cx0,cy0,rad,0,Math.PI*2);x.closePath();
+ if(F){x.clip();const k=Math.max(2*rad/F.width,2*rad/F.height),w=F.width*k,h=F.height*k;x.drawImage(F,cx0-w/2,cy0-h/2,w,h)}else{x.fillStyle='#dc2626';x.fill()}x.restore();
+ x.lineWidth=6;x.strokeStyle='#fff';x.beginPath();x.arc(cx0,cy0,rad,0,Math.PI*2);x.stroke();if(!F){x.fillStyle='#fff';x.textAlign='center';x.font=`800 76px ${IMG_F}`;x.fillText(String(g.numero||''),cx0,cy0+27)}
+ const L=_imgPronta(_logoSrc());if(L)x.drawImage(L,IMG_W-150,40,100,100);
+ const tx=262,mx=IMG_W-tx-(L?170:60),rl=g.ruolo&&RUOLI[g.ruolo]?RUOLI[g.ruolo].label:'';x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 22px ${IMG_F}`;x.fillText('SCHEDA GIOCATORE - STAGIONE 2026/27',tx,86);
+ x.fillStyle='#fff';_fit(x,fn(g).toUpperCase(),mx,58,'800');x.fillText(fn(g).toUpperCase(),tx,150);x.fillStyle='rgba(255,255,255,.85)';_fit(x,[g.numero?'n. '+g.numero:'',rl,'Calenzano Giovanissimi B'].filter(Boolean).join('  -  '),mx,26,'normal');x.fillText([g.numero?'n. '+g.numero:'',rl,'Calenzano Giovanissimi B'].filter(Boolean).join('  -  '),tx,194);
+ let y=270;const tw=(IMG_W-80-2*gap)/3;
+ T.forEach(([lab,val],i)=>{const tx2=40+(i%3)*(tw+gap),ty=y+Math.floor(i/3)*(tileH+gap),hl=lab==='GOL'||lab==='MEDIA VOTO';x.fillStyle=hl?'#dc2626':'rgba(255,255,255,.12)';_rr(x,tx2,ty,tw,tileH,20);x.fill();
+  x.textAlign='center';x.fillStyle=hl?'#fff':'#93c5fd';x.font=`bold 19px ${IMG_F}`;x.fillText(lab,tx2+tw/2,ty+38);x.fillStyle='#fff';_fit(x,String(val),tw-30,58,'800');x.fillText(String(val),tx2+tw/2,ty+104)});
+ y+=rT*(tileH+gap);
+ if(VG.length){x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 24px ${IMG_F}`;x.fillText('VOTI PARTITA PER PARTITA',60,y+40);y+=66;const cw=(IMG_W-80-5*14)/6;
+  VG.forEach((z,i)=>{const cx=40+(i%6)*(cw+14),cy=y+Math.floor(i/6)*100;x.fillStyle=z.v==null?'rgba(255,255,255,.12)':z.v>=7?'#16a34a':z.v>=6?'#2563eb':'#dc2626';_rr(x,cx,cy,cw,86,16);x.fill();
+   x.textAlign='center';x.fillStyle='rgba(255,255,255,.85)';x.font=`bold 18px ${IMG_F}`;x.fillText(z.lab,cx+cw/2,cy+28);x.fillStyle='#fff';x.font=`800 ${z.v==null?24:36}px ${IMG_F}`;x.fillText(z.v!=null?_fmtVoto(z.v):'s.v.',cx+cw/2,cy+70)});
+  y+=cR*100;x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 24px ${IMG_F}`;x.fillText('PARTITE',60,y+40);y+=66;
+  x.fillStyle='#fff';_rr(x,40,y-10,IMG_W-80,56+VG.length*rowH,20);x.fill();x.fillStyle='#64748b';x.font=`bold 18px ${IMG_F}`;x.textAlign='left';x.fillText('G',62,y+22);x.fillText('PARTITA',140,y+22);x.textAlign='center';x.fillText('MIN',700,y+22);x.fillText('GOL',790,y+22);x.fillText('TIRI',870,y+22);x.fillText('VOTO',965,y+22);
+  VG.forEach((z,i)=>{const ev=z.ev,ry=y+40+i*rowH,E=(ev.eventiPartita||[]).filter(q=>q.giocatoreId===g.id),gl=E.filter(q=>q.tipo==='gol'||q.tipo==='rigore').length,ti=E.filter(q=>EV_TIRI.includes(q.tipo)).length+gl;
+   if(i%2){x.fillStyle='#f1f5f9';_rr(x,50,ry,IMG_W-100,rowH-6,10);x.fill()}const yy=ry+rowH/2+5;x.textAlign='left';x.fillStyle='#0d2b5c';x.font=`bold 22px ${IMG_F}`;x.fillText(z.lab,62,yy);
+   const pl=matchLabel(ev)+'  '+(ev.golCasa||0)+'-'+(ev.golTrasferta||0);_fit(x,pl,520,22,'normal');x.fillStyle='#334155';x.fillText(pl,140,yy);
+   x.textAlign='center';x.font=`22px ${IMG_F}`;x.fillText(z.m+"'",700,yy);x.fillText(gl?String(gl):'-',790,yy);x.fillText(ti?String(ti):'-',870,yy);x.font=`bold 24px ${IMG_F}`;x.fillStyle=z.v==null?'#94a3b8':z.v>=7?'#16a34a':z.v>=6?'#2563eb':'#dc2626';x.fillText(z.v!=null?_fmtVoto(z.v):'s.v.',965,yy)})}
+ _imgPiede(x,H);return c}
+function _testoGiocatore(g){const {s,VG,mv,nv,mm}=_medieGioc(g.id),a=attendance(g.id,isA),pp=attendance(g.id,isP),rl=g.ruolo&&RUOLI[g.ruolo]?RUOLI[g.ruolo].label:(g.ruolo||'');
+ let t=`*SCHEDA ${fn(g).toUpperCase()}*\n${[rl,g.numero?'n. '+g.numero:''].filter(Boolean).join(' - ')}${g.dataNascita?'\nNato il '+fmtDate(g.dataNascita)+' ('+age(g.dataNascita)+' anni)':''}${g.piede?'\nPiede: '+g.piede:''}`;
+ t+=`\n\n*Statistiche stagione 2026/27*\nPresenze: ${s.presenze} (${pp.pct}% delle partite) - Minuti: ${s.minuti}${s.presenze?' (media '+mm+"' a partita)":''}\nGol: ${s.gol}${s.rigori?' (di cui '+s.rigori+' su rigore)':''} - Assist: ${s.assist}\nTiri: ${s.tiriTot} (${s.tiriPorta} in porta, ${s.tiriFuori} fuori${s.legni?', '+s.legni+(s.legni===1?' legno':' legni'):''})${s.tiriTot?' - Precisione '+Math.round(s.tiriPorta/s.tiriTot*100)+'%':''}\nFalli commessi: ${s.falli} - Fuorigioco: ${s.fuorigioco}\nCartellini: ${s.gialli}G ${s.rossi}R\nPresenze allenamenti: ${a.pct}%`;
+ if(VG.length){t+='\n\n*Voti*\n'+VG.map(z=>z.lab+' '+(z.v!=null?_fmtVoto(z.v):'s.v.')).join(' - ')+'\nMedia voto: '+(mv!=null?_fmtVoto(mv):'-')+(nv?' su '+nv+(nv===1?' partita':' partite'):'');
+  t+='\n\n*Partita per partita*\n'+VG.map(z=>{const E=(z.ev.eventiPartita||[]).filter(q=>q.giocatoreId===g.id),gl=E.filter(q=>q.tipo==='gol'||q.tipo==='rigore').length;return z.lab+' '+matchLabel(z.ev)+' '+(z.ev.golCasa||0)+'-'+(z.ev.golTrasferta||0)+": "+z.m+"'"+(gl?', '+gl+' gol':'')+(z.v!=null?', voto '+_fmtVoto(z.v):'')}).join('\n')}
+ return t+'\n\nMister Roberto'}
+function shareGiocatoreWA(gId){const g=fG(gId);if(!g)return;_imgCondividi(_imgGiocatore(g),'scheda-'+String(g.numero||'')+'-'+String(g.cognome||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.png',_testoGiocatore(g))}
 function openPartitaDettagli(id){const e=fE(id);if(!e)return;
 /* FORMAZIONE_BLOCCO_v1: la scheda si riapre a ogni click sulla lavagna e a ogni
    modifica. Senza questo, i modali si impilano: gli id dei tab si duplicano e
@@ -1305,7 +1495,7 @@ const formazione=e.formazione||[],panchina=e.panchina||[],sostituzioni=e.sostitu
 const tl=[];eventi.forEach(ev=>tl.push({min:ev.minuto||0,tipo:ev.tipo,gioc:ev.giocatoreId,kind:'ev',esito:ev.esito}));sostituzioni.forEach(s=>tl.push({min:s.minuto||0,gIn:s.in,gOut:s.out,kind:'sub'}));tl.sort((a,b)=>a.min-b.min);
 const tlHtml=tl.length?tl.map(x=>{if(x.kind==='sub'){const gI=fG(x.gIn),gO=fG(x.gOut);return `<div class="timeline-ev sub"><div class="minute">${x.min}'</div><div><strong>Sostituzione</strong><br><span style="color:var(--r2)">OUT: ${gO?pLink(gO):'-'}</span> &nbsp; <span style="color:var(--ok)">IN: ${gI?pLink(gI):'-'}</span></div></div>`}else{const g=fG(x.gioc);const labels={gol:'GOL',assist:'Assist',giallo:'Cartellino Giallo',rosso:'Cartellino Rosso',autogol:'Autogol',rigore:'Rigore segnato',rigoreSbagliato:'Rigore sbagliato',tiro:'Tiro',tiroDx:'Tiro destro',tiroSx:'Tiro sinistro',tiroTesta:'Tiro di testa',fallo:'Fallo',fuorigioco:'Fuorigioco',golAnnullato:'Gol annullato',angolo:'Angolo'};const cls=x.tipo==='gol'?'gol':x.tipo==='giallo'?'giallo':x.tipo==='rosso'||x.tipo==='autogol'?'rosso':'';return `<div class="timeline-ev ${cls}"><div class="minute">${x.min}'</div><div><strong>${(labels[x.tipo]||x.tipo)+evEsito(x)}</strong><br>${g?pLink(g):'-'}</div></div>`}}).join(''):'<div class="empty-state">Nessun evento registrato per questa partita</div>';
 
-const body=`${cronoBarHTML(e,id)}<div class="tabs"><div class="tab active" onclick="switchTab(this,'tab-form')">Formazione</div><div class="tab" onclick="switchTab(this,'tab-eventi')">Eventi</div><div class="tab" onclick="switchTab(this,'tab-sub')">Sostituzioni</div><div class="tab" onclick="switchTab(this,'tab-voce')">Voce${(e.clip||[]).length?' ('+e.clip.length+')':''}</div><div class="tab" onclick="switchTab(this,'tab-ref')">Referto</div><div class="tab" onclick="switchTab(this,'tab-cron')">Cronaca</div><div class="tab" onclick="switchTab(this,'tab-pstat')">Statistiche</div><div class="tab" onclick="switchTab(this,'tab-info')">Info Partita</div></div>
+const body=`${cronoBarHTML(e,id)}<div class="tabs"><div class="tab active" onclick="switchTab(this,'tab-form')">Formazione</div><div class="tab" onclick="switchTab(this,'tab-eventi')">Eventi</div><div class="tab" onclick="switchTab(this,'tab-sub')">Sostituzioni</div><div class="tab" onclick="switchTab(this,'tab-voce')">Voce${(e.clip||[]).length?' ('+e.clip.length+')':''}</div><div class="tab" onclick="switchTab(this,'tab-ref')">Referto</div><div class="tab" onclick="switchTab(this,'tab-voti')">Voti</div><div class="tab" onclick="switchTab(this,'tab-cron')">Cronaca</div><div class="tab" onclick="switchTab(this,'tab-pstat')">Statistiche</div><div class="tab" onclick="switchTab(this,'tab-info')">Info Partita</div></div>
 <div id="tab-form" class="tab-pane">${tabFormazioneHTML(e,id)}</div>
 <div id="tab-eventi" class="tab-pane" style="display:none">
 ${eventi.length?eventi.sort((a,b)=>(a.minuto||0)-(b.minuto||0)).map((ev,i)=>{const g=fG(ev.giocatoreId);const tipi={gol:'Gol',assist:'Assist',giallo:'Giallo',rosso:'Rosso',autogol:'Autogol',rigore:'Rigore',rigoreSbagliato:'Rig. Sbagl.',tiro:'Tiro',tiroDx:'Tiro destro',tiroSx:'Tiro sinistro',tiroTesta:'Tiro di testa',fallo:'Fallo',fuorigioco:'Fuorigioco',golAnnullato:'Gol annullato',angolo:'Angolo'};const c={gol:'badge-ok',assist:'badge-info',giallo:'badge-warn',rosso:'badge-danger',autogol:'badge-danger'}[ev.tipo]||'badge-muted';return `<div class="convoca-row"><span style="font-weight:700;min-width:40px">${ev.minuto||'-'}'</span><span class="badge ${c}">${(tipi[ev.tipo]||ev.tipo)+evEsito(ev)}</span><span class="name">${g?pLink(g):'-'}${ev.fonte?' <span class="voce-tag">'+esc(ev.fonte)+'</span>':''}</span><button class="btn btn-sm btn-danger" onclick="rmEvP('${id}',${i})">X</button></div>`}).join(''):'<div class="empty-state">Nessun evento</div>'}
@@ -1317,7 +1507,7 @@ ${sostituzioni.map((s,i)=>{const gI=fG(s.in),gO=fG(s.out);return `<div class="co
 </div>
 <div id="tab-voce" class="tab-pane" style="display:none">${clipTabHTML(e,id)}${regTabHTML(e,id)}${voceImportHTML(e,id)}</div>
 <div id="tab-ref" class="tab-pane" style="display:none">${refTabHTML(e,id)}</div>
-<div id="tab-cron" class="tab-pane" style="display:none">${cronacaTabHTML(e,id)}</div><div id="tab-pstat" class="tab-pane" style="display:none">${statsTabHTML(e,id)}</div><div id="tab-info" class="tab-pane" style="display:none">
+<div id="tab-voti" class="tab-pane" style="display:none">${votiTabHTML(e,id)}</div><div id="tab-cron" class="tab-pane" style="display:none">${cronacaTabHTML(e,id)}</div><div id="tab-pstat" class="tab-pane" style="display:none">${statsTabHTML(e,id)}</div><div id="tab-info" class="tab-pane" style="display:none">
 <div style="background:var(--b4);padding:14px;border-radius:8px;margin-bottom:14px">
 <p><strong>Data:</strong> ${fmtDateLong(e.data)} - <strong>Ora:</strong> ${e.ora||'-'}</p>
 <p><strong>Luogo:</strong> ${esc(e.luogo||'-')}</p>
