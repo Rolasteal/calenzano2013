@@ -363,7 +363,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.04f - WhatsApp manda la scheda aperta della partita</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.04g - WhatsApp: cronaca vera, immagini lunghe in pagine</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -1472,7 +1472,8 @@ function _cronacaTesto(e){const c=e.cronaca;if(!c){const m=_marcLista(e).map(z=>
  let t='*'+(c.titolo||matchLabel(e))+'*'+(c.sottotitolo?'\n'+c.sottotitolo:'');if(c.intro)t+='\n\n'+c.intro;let t0=0;
  (c.righe||[]).forEach(r=>{if(r.t!==t0){t0=r.t;t+='\n\n*'+(r.t===1?'PRIMO TEMPO':'SECONDO TEMPO')+'*'}t+='\n'+(r.fine?'*'+r.testo+'*':(r.m!=null?r.m+"' ":'')+r.testo+(r.gol&&r.ris?' ('+r.ris+')':''))});
  if(c.sintesi)t+='\n\n'+c.sintesi;return t}
-function cronacaShare(id){const e=fE(id);if(!e)return;_imgCondividi(_imgCronaca(e),'partita-'+(e.data||'')+'.png',_cronacaTesto(e))}
+function cronacaShare(id){const e=fE(id);if(!e)return;if(!e.cronaca){toast('Nessuna cronaca per questa partita: importala dal PC nella scheda Cronaca',true);return}
+ _imgCondividiN(_imgPagine(_waSopra(e),'CRONACA',_waSotto(e),_bCronaca(e)),'cronaca-'+(e.data||''),_cronacaTesto(e))}
 /* WA_SCHEDE_v1: in Dettagli partita il pulsante WhatsApp in fondo manda la scheda aperta.
    Formazione, Voce e Referto -> formazione (le foto del referto restano sul telefono). */
 const _WA_TAB={'tab-form':'Formazione','tab-eventi':'Eventi','tab-sub':'Sostituzioni','tab-voce':'Formazione','tab-ref':'Formazione','tab-voti':'Voti','tab-cron':'Cronaca','tab-pstat':'Statistiche','tab-info':'Info partita'};
@@ -1490,34 +1491,65 @@ function _waRighe(e,ev,sub){const R=[];
  return R.map((z,i)=>({...z,i})).sort((a,b)=>a.t-b.t||a.m-b.m||a.i-b.i)}
 function _waRigheTesto(e,R){let t='',t0=0;R.forEach(z=>{if(z.t!==t0){t0=z.t;t+='\n\n*'+_waTempo(z.t)+'*'}t+='\n'+z.m+"' "+(z.k==='sub'?'Esce '+_waG(z.gOut)+', entra '+_waG(z.gIn):z.lab+(z.g?' - '+_waG(z.g):''))});return t}
 function _waTesta(e,tit){const gi=_partG(e);return '*'+tit+' - '+matchLabel(e)+' '+(e.golCasa||0)+'-'+(e.golTrasferta||0)+'*\n'+(gi?gi+'a giornata - ':'')+fmtDateLong(e.data)}
-function _imgRigheH(R){return R.length?R.length*58+new Set(R.map(z=>z.t)).size*54+24:110}
-function _imgRighe(x,y,R,vuoto){const X=40,W=IMG_W-80,H=_imgRigheH(R);x.fillStyle='#fff';_rr(x,X,y,W,H,24);x.fill();
- if(!R.length){x.fillStyle='#64748b';x.textAlign='center';x.font=`26px ${IMG_F}`;x.fillText(vuoto,IMG_W/2,y+64);return y+H}
- let yy=y+12,t0=0,k=0;R.forEach(z=>{
-  if(z.t!==t0){t0=z.t;k=0;x.textAlign='left';x.fillStyle='#64748b';x.font=`bold 20px ${IMG_F}`;x.fillText(_waTempo(z.t).toUpperCase(),X+28,yy+36);x.fillStyle='#e2e8f0';x.fillRect(X+28,yy+48,W-56,2);yy+=54}
-  const my=yy+29;if(k++%2){x.fillStyle='#f1f5f9';_rr(x,X+12,yy+2,W-24,54,12);x.fill()}
-  x.fillStyle='#0d2b5c';_rr(x,X+24,yy+9,84,40,20);x.fill();x.fillStyle='#fff';x.textAlign='center';x.font=`bold 24px ${IMG_F}`;x.fillText(z.m+"'",X+66,my+8);
-  if(z.k==='sub'){const half=(W-140)/2;[[z.gOut,'ESCE','#dc2626',X+124],[z.gIn,'ENTRA','#16a34a',X+124+half]].forEach(([g,lab,col,xx])=>{x.font=`bold 18px ${IMG_F}`;const bw=x.measureText(lab).width+22;x.fillStyle=col;_rr(x,xx,yy+14,bw,30,15);x.fill();x.fillStyle='#fff';x.textAlign='center';x.fillText(lab,xx+bw/2,my+6);
+/* WA_PAGINE_v1: immagini lunghe in pagine (max IMG_MAXH, bilanciate), righe a schede separate,
+   Cronaca = immagine col racconto (prima mandava il tabellino, che sembrava le statistiche). */
+const IMG_MAXH=2400;
+function _imgCondividiN(C,base,testo){const files=[];
+ C.forEach((cv,i)=>{try{const u=cv.toDataURL('image/png'),bin=atob(u.split(',')[1]),arr=new Uint8Array(bin.length);for(let j=0;j<bin.length;j++)arr[j]=bin.charCodeAt(j);files.push(new File([arr],base+(C.length>1?'-'+(i+1):'')+'.png',{type:'image/png'}));if(!i)window._ultimaImmagineWA=u}catch(err){console.warn('immagine',err)}});
+ if(files.length&&navigator.canShare&&navigator.canShare({files})){navigator.share({files,text:testo}).catch(()=>{});return}
+ files.forEach((f,i)=>setTimeout(()=>{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)},i*400));
+ if(files.length)toast(files.length>1?files.length+' immagini scaricate: allegale al messaggio WhatsApp':'Immagine scaricata: allegala al messaggio WhatsApp');
+ shareWAGruppo(testo)}
+function _imgPagine(sopra,titolo,sotto,B){const top=244,bot=130,cap=IMG_MAXH-top-bot,tot=B.reduce((s,b)=>s+b.h,0),n=Math.max(1,Math.ceil(tot/cap)),obj=tot/n,P=[[]];let u=0;
+ B.forEach(b=>{let cur=P[P.length-1];
+  if(cur.length&&(u+b.h>cap||(P.length<n&&u+b.h/2>obj))){const k=[];while(cur.length>1&&cur[cur.length-1].keep)k.unshift(cur.pop());P.push(k);u=k.reduce((s,z)=>s+z.h,0);cur=k}
+  cur.push(b);u+=b.h});
+ return P.map((Q,i)=>{if(i&&!Q[0].keep&&Q[0].sez)Q=[_bTit(Q[0].sez+' (segue)',56),...Q];const H=top+Q.reduce((s,b)=>s+b.h,0)+bot,{c,x}=_imgTela(H);let y=_imgTesta(x,sopra+(P.length>1?'  -  pagina '+(i+1)+'/'+P.length:''),titolo,sotto)+4;Q.forEach(b=>{b.draw(x,y);y+=b.h});_imgPiede(x,H);return c})}
+function _waSopra(e){const gi=_partG(e);return (gi?gi+'a giornata - ':'')+(e.competizione||'')}
+function _waSotto(e){return matchLabel(e)+'  '+(e.golCasa||0)+' - '+(e.golTrasferta||0)+'  -  '+fmtDate(e.data)}
+function _bTit(s,h){return {h:h||62,keep:1,draw:(x,y)=>{x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 24px ${IMG_F}`;x.fillText(s,70,y+40)}}}
+function _bTesto(s,font,col,lh,pad){const m=document.createElement('canvas').getContext('2d');m.font=font;const L=_imgWrap(m,String(s||''),IMG_W-140);
+ return {h:L.length*lh+(pad||0),draw:(x,y)=>{x.textAlign='left';x.fillStyle=col;x.font=font;L.forEach((r,i)=>x.fillText(r,70,y+lh*(i+1)-8))}}}
+function _bVuoto(s){return {h:110,draw:(x,y)=>{x.fillStyle='#fff';_rr(x,40,y,IMG_W-80,90,20);x.fill();x.fillStyle='#64748b';x.textAlign='center';x.font=`26px ${IMG_F}`;x.fillText(s,IMG_W/2,y+54)}}}
+function _bRiga(z){return {h:60,draw:(x,y)=>{const X=40,W=IMG_W-80,my=y+26;x.fillStyle='#fff';_rr(x,X,y,W,52,14);x.fill();
+  x.fillStyle='#0d2b5c';_rr(x,X+14,y+6,84,40,20);x.fill();x.fillStyle='#fff';x.textAlign='center';x.font=`bold 24px ${IMG_F}`;x.fillText(z.m+"'",X+56,my+8);
+  if(z.k==='sub'){const half=(W-130)/2;[[z.gOut,'ESCE','#dc2626',X+114],[z.gIn,'ENTRA','#16a34a',X+114+half]].forEach(([g,lab,col,xx])=>{x.font=`bold 18px ${IMG_F}`;const bw=x.measureText(lab).width+22;x.fillStyle=col;_rr(x,xx,y+11,bw,30,15);x.fill();x.fillStyle='#fff';x.textAlign='center';x.fillText(lab,xx+bw/2,my+6);
     x.textAlign='left';x.fillStyle='#0d2b5c';const s=_waG(g);_fit(x,s,half-bw-24,26,'600');x.fillText(s,xx+bw+12,my+9)})}
-  else{const [bg,fg]=_EV_COL[z.tipo]||['#e2e8f0','#334155'];_fit(x,z.lab,300,21,'bold');const bw=Math.min(324,x.measureText(z.lab).width+24);x.fillStyle=bg;_rr(x,X+124,yy+12,bw,34,17);x.fill();x.fillStyle=fg;x.textAlign='center';x.fillText(z.lab,X+124+bw/2,my+7);
-   if(z.g){x.textAlign='left';x.fillStyle='#0d2b5c';const s=_waG(z.g);_fit(x,s,W-464-24,26,'600');x.fillText(s,X+464,my+9)}}
-  yy+=58});return y+H}
-function _imgEventi(e,tit,R,vuoto,extra){const gi=_partG(e),H=250+(extra?extra.h:0)+_imgRigheH(R)+40+90,{c,x}=_imgTela(H);
- let y=_imgTesta(x,(gi?gi+'a giornata - ':'')+(e.competizione||''),tit,matchLabel(e)+'  '+(e.golCasa||0)+' - '+(e.golTrasferta||0)+'  -  '+fmtDate(e.data))+4;
- if(extra)y=extra.draw(x,y);_imgRighe(x,y,R,vuoto);_imgPiede(x,H);return c}
+  else{const [bg,fg]=_EV_COL[z.tipo]||['#e2e8f0','#334155'];_fit(x,z.lab,300,21,'bold');const bw=Math.min(324,x.measureText(z.lab).width+24);x.fillStyle=bg;_rr(x,X+114,y+9,bw,34,17);x.fill();x.fillStyle=fg;x.textAlign='center';x.fillText(z.lab,X+114+bw/2,my+7);
+   if(z.g){x.textAlign='left';x.fillStyle='#0d2b5c';const s=_waG(z.g);_fit(x,s,W-454-24,26,'600');x.fillText(s,X+454,my+9)}}}}}
+function _bRighe(R){const B=[];let t0=0;R.forEach(z=>{if(z.t!==t0){t0=z.t;B.push(_bTit(_waTempo(z.t).toUpperCase(),56))}B.push({..._bRiga(z),sez:_waTempo(z.t).toUpperCase()})});return B}
 function condividiEventiWA(id){const e=fE(id);if(!e)return;const R=_waRighe(e,1,0);
- _imgCondividi(_imgEventi(e,'EVENTI',R,'Nessun evento registrato'),'eventi-'+(e.data||'')+'.png',_waTesta(e,'EVENTI')+(R.length?_waRigheTesto(e,R):'\n\nNessun evento registrato'))}
+ _imgCondividiN(_imgPagine(_waSopra(e),'EVENTI',_waSotto(e),R.length?_bRighe(R):[_bVuoto('Nessun evento registrato')]),'eventi-'+(e.data||''),_waTesta(e,'EVENTI')+(R.length?_waRigheTesto(e,R):'\n\nNessun evento registrato'))}
 function condividiSostWA(id){const e=fE(id);if(!e)return;const R=_waRighe(e,0,1);
- _imgCondividi(_imgEventi(e,'SOSTITUZIONI',R,'Nessuna sostituzione'),'sostituzioni-'+(e.data||'')+'.png',_waTesta(e,'SOSTITUZIONI')+(R.length?_waRigheTesto(e,R):'\n\nNessuna sostituzione'))}
-function condividiInfoWA(id){const e=fE(id);if(!e)return;const R=_waRighe(e,1,1),gi=_partG(e);
- const I=[['Data',fmtDateLong(e.data)+(e.ora?' - ore '+e.ora:'')],['Luogo',e.luogo||'-'],['Avversario',(e.avversario||'-')+(e.casaTrasferta?' ('+e.casaTrasferta+')':'')],['Competizione',e.competizione||'-'],['Risultato',(e.golCasa||0)+' - '+(e.golTrasferta||0)]];
+ _imgCondividiN(_imgPagine(_waSopra(e),'SOSTITUZIONI',_waSotto(e),R.length?_bRighe(R):[_bVuoto('Nessuna sostituzione')]),'sostituzioni-'+(e.data||''),_waTesta(e,'SOSTITUZIONI')+(R.length?_waRigheTesto(e,R):'\n\nNessuna sostituzione'))}
+function _bInfo(e){const I=[['Data',fmtDateLong(e.data)+(e.ora?' - ore '+e.ora:'')],['Luogo',e.luogo||'-'],['Avversario',(e.avversario||'-')+(e.casaTrasferta?' ('+e.casaTrasferta+')':'')],['Competizione',e.competizione||'-'],['Risultato',(e.golCasa||0)+' - '+(e.golTrasferta||0)]];
  const m=document.createElement('canvas').getContext('2d');m.font=`26px ${IMG_F}`;const L=I.map(([k,v])=>[k,_imgWrap(m,String(v),IMG_W-80-260-40)]),hI=30+L.reduce((s,[k,r])=>s+r.length*36+18,0);
- const extra={h:hI+20+66,draw:(x,y)=>{x.fillStyle='#fff';_rr(x,40,y,IMG_W-80,hI,24);x.fill();let yy=y+20;
-  L.forEach(([k,r])=>{x.textAlign='left';x.fillStyle='#64748b';x.font=`bold 22px ${IMG_F}`;x.fillText(k.toUpperCase(),70,yy+30);x.fillStyle='#0d2b5c';x.font=`${k==='Risultato'?'bold ':''}26px ${IMG_F}`;r.forEach((s,j)=>x.fillText(s,300,yy+30+j*36));yy+=r.length*36+18});
-  y+=hI+20;x.textAlign='left';x.fillStyle='#93c5fd';x.font=`bold 24px ${IMG_F}`;x.fillText('CRONOLOGIA PARTITA',70,y+40);return y+66}};
+ return {h:hI+20,draw:(x,y)=>{x.fillStyle='#fff';_rr(x,40,y,IMG_W-80,hI,24);x.fill();let yy=y+20;
+  L.forEach(([k,r])=>{x.textAlign='left';x.fillStyle='#64748b';x.font=`bold 22px ${IMG_F}`;x.fillText(k.toUpperCase(),70,yy+30);x.fillStyle='#0d2b5c';x.font=`${k==='Risultato'?'bold ':''}26px ${IMG_F}`;r.forEach((s,j)=>x.fillText(s,300,yy+30+j*36));yy+=r.length*36+18})}}}
+function condividiInfoWA(id){const e=fE(id);if(!e)return;const R=_waRighe(e,1,1),gi=_partG(e),B=[_bInfo(e),_bTit('CRONOLOGIA PARTITA')];
+ if(R.length)B.push(..._bRighe(R));else B.push(_bVuoto('Nessun evento registrato'));
  let t='*INFO PARTITA - '+matchLabel(e)+'*\n'+evL(e)+(gi?' - '+gi+'a giornata':'')+'\n'+fmtDateLong(e.data)+(e.ora?' - ore '+e.ora:'')+'\nLuogo: '+(e.luogo||'-')+'\nAvversario: '+(e.avversario||'-')+(e.casaTrasferta?' ('+e.casaTrasferta+')':'')+(e.competizione?'\nCompetizione: '+e.competizione:'')+'\n\n*RISULTATO: '+(e.golCasa||0)+' - '+(e.golTrasferta||0)+'*';
  if(R.length)t+='\n\n*Cronologia partita*'+_waRigheTesto(e,R);
- _imgCondividi(_imgEventi(e,'INFO PARTITA',R,'Nessun evento registrato',extra),'info-'+(e.data||'')+'.png',t)}
+ _imgCondividiN(_imgPagine(_waSopra(e),'INFO PARTITA',_waSotto(e),B),'info-'+(e.data||''),t)}
+function _bCron(r){const m=document.createElement('canvas').getContext('2d');
+ if(r.fine){m.font=`bold 26px ${IMG_F}`;const L=_imgWrap(m,String(r.testo||''),IMG_W-180),h=L.length*34+26;
+  return {h:h+8,draw:(x,y)=>{x.fillStyle='#dc2626';_rr(x,40,y,IMG_W-80,h,14);x.fill();x.fillStyle='#fff';x.textAlign='center';x.font=`bold 26px ${IMG_F}`;L.forEach((s,i)=>x.fillText(s,IMG_W/2,y+13+34*(i+1)-8))}}}
+ const gol=!!r.gol,avv=r.sq==='avv',font=`${gol?'bold ':''}24px ${IMG_F}`,ris=gol&&r.ris?String(r.ris):'';m.font=`bold 22px ${IMG_F}`;const rw=ris?m.measureText(ris).width+24:0;m.font=font;
+ const L=_imgWrap(m,String(r.testo||''),IMG_W-80-114-24-(rw?rw+12:0)),h=Math.max(52,L.length*32+20);
+ return {h:h+8,draw:(x,y)=>{const X=40,W=IMG_W-80;x.fillStyle=avv?'#e2e8f0':'#fff';_rr(x,X,y,W,h,14);x.fill();
+  if(gol){x.fillStyle=avv?'#64748b':'#16a34a';_rr(x,X,y,10,h,5);x.fill()}
+  if(r.m!=null&&r.m!==''){x.fillStyle=avv?'#64748b':'#0d2b5c';_rr(x,X+14,y+6,84,40,20);x.fill();x.fillStyle='#fff';x.textAlign='center';x.font=`bold 24px ${IMG_F}`;x.fillText(String(r.m)+"'",X+56,y+34)}
+  x.textAlign='left';x.fillStyle=avv?'#334155':'#0d2b5c';x.font=font;L.forEach((s,i)=>x.fillText(s,X+114,y+10+32*(i+1)-8));
+  if(rw){x.fillStyle=avv?'#64748b':'#16a34a';_rr(x,X+W-14-rw,y+9,rw,34,17);x.fill();x.fillStyle='#fff';x.textAlign='center';x.font=`bold 22px ${IMG_F}`;x.fillText(ris,X+W-14-rw/2,y+34)}}}}
+function _bCronaca(e){const c=e.cronaca||{},B=[];
+ if(c.titolo)B.push(_bTesto(c.titolo,`800 40px ${IMG_F}`,'#fff',50,6));
+ if(c.sottotitolo)B.push(_bTesto(c.sottotitolo,`24px ${IMG_F}`,'rgba(255,255,255,.8)',34,10));
+ if(c.intro)B.push(_bTesto(c.intro,`italic 26px ${IMG_F}`,'#fff',38,16));
+ if(c.formazione){B.push(_bTit('FORMAZIONE '+CASA_NOME.toUpperCase()),_bTesto(c.formazione,`24px ${IMG_F}`,'#fff',34,4));if(c.panchina)B.push(_bTesto('A disposizione: '+c.panchina,`24px ${IMG_F}`,'rgba(255,255,255,.75)',34,10))}
+ let t0=0;(c.righe||[]).forEach(r=>{const sez=(r.t===1?'Primo tempo':r.t===2?'Secondo tempo':'Tempo '+r.t).toUpperCase();if(r.t!==t0){t0=r.t;B.push(_bTit(sez,56))}B.push({..._bCron(r),sez})});
+ if(c.sintesi)B.push({h:14,draw:()=>{}},_bTesto(c.sintesi,`italic 26px ${IMG_F}`,'#fff',38,10));
+ if((c.note||[]).length){B.push(_bTit('NOTE'));c.note.forEach(n=>B.push(_bTesto('- '+n,`24px ${IMG_F}`,'rgba(255,255,255,.85)',34,6)))}
+ return B}
 const _WA_ST=[['Tiri totali','tiri',1],['Tiri in porta','porta',1],['Tiri fuori','fuori',1],['Legni','legni'],['Tiri respinti','respinti'],["Calci d'angolo",'angoli',1],['Falli commessi','falli',1],['Fuorigioco','fuorigioco',1],['Gol annullati','annullati'],['Parate','parate',1],['Rigori','rigori'],['Ammonizioni','gialli'],['Espulsioni','rossi'],['Sostituzioni','sost',1]];
 function _waStatsDati(e){const {n,l}=partStats(e),casa=e.casaTrasferta!=='trasferta',av=(e.avversario||'Avversario').trim(),S=casa?[{nome:CASA_NOME,v:n,noi:1},{nome:av,v:l,noi:0}]:[{nome:av,v:l,noi:0},{nome:CASA_NOME,v:n,noi:1}];
  return {S,rows:_WA_ST.filter(([lab,k,s])=>s||S[0].v[k]||S[1].v[k]),pr:v=>v.tiri?Math.round(v.porta/v.tiri*100)+'%':'-'}}
