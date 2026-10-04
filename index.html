@@ -363,7 +363,7 @@ tr.clickable{cursor:pointer}
 <div class="nav-item" data-view="impostazioni">Impostazioni</div>
 <div class="nav-item" data-view="import">Import / Backup</div>
 </nav>
-<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.04d - lista partite compatta sul telefono, schede multiple</div>
+<div id="cloudBar" style="padding:8px 14px;font-size:11px;opacity:.85"></div><div style="padding:2px 14px 10px;font-size:10px;opacity:.55">v2026.10.04e - posizioni della formazione dalla cronaca</div>
 </aside>
 <main class="main">
 <header class="topbar">
@@ -1280,11 +1280,13 @@ async function _cronacaImporta(nome,id){const j=await _pcFetch('/cronaca?nome='+
  if(nuova){e={id:uid(),tipo:'partita',data:d.partita.data,ora:'',luogo:d.partita.luogo||'',durata:2*(+d.partita.tempo||35),avversario:d.partita.avversario||'',casaTrasferta:d.partita.casaTrasferta||'casa',competizione:'Campionato'};DATA.eventi.push(e)}
  _cronacaApplica(e,d,nome,byN);saveData();closeModal();openPartitaDettagli(e.id);_apriTab('tab-cron');toast('Cronaca importata: '+d.cronaca.titolo)}
 function _cronacaApplica(e,d,nome,byN){const P=d.partita,T=+P.tempo||35,am=x=>(x.t-1)*T+x.m,gid=n=>n==null?null:(byN[String(n)]||null);
- e._primaCronaca=JSON.stringify({formazione:e.formazione,panchina:e.panchina,formazionePos:e.formazionePos,sostituzioni:e.sostituzioni,eventiPartita:e.eventiPartita,indisponibili:e.indisponibili,golCasa:e.golCasa,golTrasferta:e.golTrasferta,completato:e.completato,eventiAvv:e.eventiAvv,sostAvv:e.sostAvv,cronaca:e.cronaca,giornata:e.giornata,presenze:(DATA.presenze||{})[e.id],voti:e.voti});
+ e._primaCronaca=JSON.stringify({modulo:e.modulo,formazione:e.formazione,panchina:e.panchina,formazionePos:e.formazionePos,sostituzioni:e.sostituzioni,eventiPartita:e.eventiPartita,indisponibili:e.indisponibili,golCasa:e.golCasa,golTrasferta:e.golTrasferta,completato:e.completato,eventiAvv:e.eventiAvv,sostAvv:e.sostAvv,cronaca:e.cronaca,giornata:e.giornata,presenze:(DATA.presenze||{})[e.id],voti:e.voti});
  if(!e.avversario)e.avversario=P.avversario||'';if(P.casaTrasferta)e.casaTrasferta=P.casaTrasferta;if(!e.luogo&&P.luogo)e.luogo=P.luogo;if(P.giornata)e.giornata=P.giornata;
  const casa=e.casaTrasferta!=='trasferta';e.golCasa=casa?P.ris.noi:P.ris.loro;e.golTrasferta=casa?P.ris.loro:P.ris.noi;e.completato=true;
  const F=d.formazione.map(gid),stesso=(e.formazione||[]).length===F.length&&F.every(x=>(e.formazione||[]).includes(x));
- if(!stesso){e.formazione=F;delete e.formazionePos}
+ /* FORMAZIONE_POSIZIONI_v1: posizioni esplicite sulla lavagna, nell'ordine del modulo */
+ const mod=d.modulo||e.modulo||'4-3-3';if(Array.isArray(d.posizioni)&&MODULI[mod]&&d.posizioni.length===MODULI[mod].length){e.modulo=mod;e.formazione=d.posizioni.map(gid);e.formazionePos={};e.formazione.forEach((g,i)=>{e.formazionePos[i]=g})}
+ else if(!stesso){e.formazione=F;delete e.formazionePos}
  e.panchina=d.panchina.map(gid);e.indisponibili=(d.indisponibili||[]).map(x=>gid(x.numero)).filter(Boolean);
  e.sostituzioni=(d.sostituzioni||[]).map(s=>({out:gid(s.out),in:gid(s.in),minuto:am(s),t:s.t,fonte:'cronaca'}));
  e.eventiPartita=(d.eventi||[]).map(x=>{const o={tipo:x.tipo,giocatoreId:gid(x.n),minuto:am(x),t:x.t,fonte:'cronaca'};['esito','parte','nota'].forEach(k=>{if(x[k])o[k]=x[k]});return o});
@@ -1296,7 +1298,7 @@ function _cronacaApplica(e,d,nome,byN){const P=d.partita,T=+P.tempo||35,am=x=>(x
  if(d.voti){e.voti=e.voti||{};Object.entries(d.voti).forEach(([n,v])=>{const g=gid(n),x=parseFloat(String(v).replace(',','.'));if(g&&!isNaN(x)&&x>=1&&x<=10&&e.voti[g]==null)e.voti[g]=Math.round(x*4)/4})}
  e.cronaca=Object.assign({},d.cronaca,{fonte:d.fonte||'',pacchetto:nome,importata:new Date().toISOString()})}
 function cronacaAnnulla(id){const e=fE(id);if(!e||!e._primaCronaca)return;if(!confirm('Tolgo la cronaca importata e rimetto la partita com\'era prima?'))return;
- const b=JSON.parse(e._primaCronaca);['formazione','panchina','formazionePos','sostituzioni','eventiPartita','indisponibili','golCasa','golTrasferta','completato','eventiAvv','sostAvv','cronaca','giornata','voti'].forEach(k=>{if(b[k]===undefined)delete e[k];else e[k]=b[k]});if(b.presenze===undefined)delete DATA.presenze[id];else DATA.presenze[id]=b.presenze;
+ const b=JSON.parse(e._primaCronaca);['modulo','formazione','panchina','formazionePos','sostituzioni','eventiPartita','indisponibili','golCasa','golTrasferta','completato','eventiAvv','sostAvv','cronaca','giornata','voti'].forEach(k=>{if(b[k]===undefined)delete e[k];else e[k]=b[k]});if(b.presenze===undefined)delete DATA.presenze[id];else DATA.presenze[id]=b.presenze;
  delete e._primaCronaca;saveData();openPartitaDettagli(id);toast('Importazione annullata')}
 async function cronacheDalPC(){if(!_pcUrl()){toast('Indirizzo del PC non impostato: aprilo da una partita, tab Voce',true);return}
  openModal('Cronache dal PC','<div id="cron-elenco" class="empty-state">Cerco sul PC...</div>','<button class="btn btn-secondary" onclick="closeModal()">Chiudi</button>');
